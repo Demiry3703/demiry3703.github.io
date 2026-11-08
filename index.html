@@ -7,7 +7,7 @@
   <meta name="description" content="立命館大学 理工学部 電子情報工学科 3 回生（2028 年卒）、髙橋浩樹のポートフォリオ。長期インターンでの本番 LLM パイプラインの精度改善と評価の仕組みづくり、個人開発の shirube、JPHACKS 2026 のとなりを紹介します。">
   <meta property="og:type" content="website">
   <meta property="og:title" content="髙橋 浩樹 | ポートフォリオ">
-  <meta property="og:description" content="LLM の出力を、測ってから直す。本番の LLM パイプラインの精度改善と、RAG を使った Web アプリの個人開発。">
+  <meta property="og:description" content="立命館大学 理工学部 3 回生。本番の LLM パイプラインの精度改善と評価の仕組みづくり、RAG を使った Web アプリの個人開発。">
   <meta name="theme-color" content="#f6f6f2" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -40,68 +40,54 @@
   <main id="main">
     <!-- ============ ヒーロー ============ -->
     <section class="hero" id="top" aria-labelledby="hero-title">
-      <div class="wrap hero-grid">
-        <div>
-          <h1 id="hero-title">LLM の出力を、<br><em>測ってから</em>直す。</h1>
-          <div class="lead">
-            <p>立命館大学 理工学部 電子情報工学科 3 回生の髙橋浩樹です。大学 3 年の春から Baseconnect で長期インターンをしていて、営業向け企業データベースのデータを作る本番の LLM パイプラインの精度改善と、その評価の仕組みを担当しています。個人では、なりたい職業から履修計画を組む Web アプリ <a href="shirube.html">shirube</a> を、設計から本番公開まで一人で作りました。</p>
-          </div>
-
-          <ul class="entry-list" aria-label="詳しく読む">
-            <li>
-              <a href="work.html">
-                <span class="entry-kind">仕事 / インターン</span>
-                <span class="entry-title">本番の LLM パイプラインの精度改善<span>運営会社の特定精度を 69.8% → 90.6% に。いちばん苦労した開発経験</span></span>
-                <span class="entry-arrow" aria-hidden="true">→</span>
-              </a>
-            </li>
-            <li>
-              <a href="eval.html">
-                <span class="entry-kind">仕事 / インターン</span>
-                <span class="entry-title">評価の高速化<span>900 店舗で 2〜3 時間かかっていた LLM の評価を、約 8 分に</span></span>
-                <span class="entry-arrow" aria-hidden="true">→</span>
-              </a>
-            </li>
-            <li>
-              <a href="shirube.html">
-                <span class="entry-kind">個人開発</span>
-                <span class="entry-title">shirube（道標）<span>職業からシラバスを RAG で引き、理由つきの時間割を組む</span></span>
-                <span class="entry-arrow" aria-hidden="true">→</span>
-              </a>
-            </li>
-            <li>
-              <a href="tonari.html">
-                <span class="entry-kind">チーム開発</span>
-                <span class="entry-title">となり（JPHACKS 2026）<span>詰まったときだけ声をかける、答えを言わない AI 家庭教師</span></span>
-                <span class="entry-arrow" aria-hidden="true">→</span>
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <aside class="profile-card" aria-label="プロフィール">
-          <div class="profile-head">
-            <div>
-              <p class="profile-name"><ruby>髙橋<rt>たかはし</rt></ruby> <ruby>浩樹<rt>ひろき</rt></ruby></p>
-              <p class="profile-roman">Hiroki Takahashi</p>
-            </div>
-          </div>
-          <dl class="profile-facts">
-            <dt>大学</dt>
-            <dd>立命館大学 理工学部<br>電子情報工学科 3 回生</dd>
-            <dt>卒業</dt>
-            <dd>2028 年 3 月 予定</dd>
-            <dt>インターン</dt>
-            <dd>Baseconnect 株式会社<br>AI エンジニア（2026 年 4 月〜）</dd>
+      <div class="wrap">
+        <div class="hero-intro">
+          <p class="hero-roman">Hiroki Takahashi</p>
+          <h1 class="hero-name" id="hero-title"><ruby>髙橋<rt>たかはし</rt></ruby> <ruby>浩樹<rt>ひろき</rt></ruby></h1>
+          <dl class="hero-facts">
+            <div><dt>大学</dt><dd>立命館大学 理工学部 電子情報工学科 3 回生（2028 年 3 月 卒業予定）</dd></div>
+            <div><dt>インターン</dt><dd>Baseconnect 株式会社　AI エンジニア（2026 年 4 月〜）</dd></div>
           </dl>
-          <div class="profile-actions">
+          <p class="lead">大学 3 年の春から Baseconnect で長期インターンをしていて、営業向け企業データベースのデータを作る本番の LLM パイプラインの精度改善と、その評価の仕組みを担当しています。個人では、なりたい職業から履修計画を組む Web アプリ <a href="shirube.html">shirube</a> を、設計から本番公開まで一人で作りました。</p>
+          <div class="hero-actions">
             <a class="btn" href="https://github.com/h11roki">
               <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
               GitHub
             </a>
             <a class="btn btn-primary" href="#contact">連絡する</a>
           </div>
-        </aside>
+        </div>
+
+        <ul class="entry-list" aria-label="詳しく読む">
+          <li>
+            <a href="work.html">
+              <span class="entry-kind">仕事 / インターン</span>
+              <span class="entry-title">本番の LLM パイプラインの精度改善<span>運営会社の特定精度を 69.8% → 90.6% に。いちばん苦労した開発経験</span></span>
+              <span class="entry-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="eval.html">
+              <span class="entry-kind">仕事 / インターン</span>
+              <span class="entry-title">評価の高速化<span>900 店舗で 2〜3 時間かかっていた LLM の評価を、約 8 分に</span></span>
+              <span class="entry-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="shirube.html">
+              <span class="entry-kind">個人開発</span>
+              <span class="entry-title">shirube（道標）<span>職業からシラバスを RAG で引き、理由つきの時間割を組む</span></span>
+              <span class="entry-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="tonari.html">
+              <span class="entry-kind">チーム開発</span>
+              <span class="entry-title">となり（JPHACKS 2026）<span>詰まったときだけ声をかける、答えを言わない AI 家庭教師</span></span>
+              <span class="entry-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+        </ul>
       </div>
     </section>
 
