@@ -922,6 +922,20 @@ td.good { color: var(--accent-ink); font-weight: 500; }
   .case dd + dt { margin-top: 10px; }
 }
 
+/* 紹介動画 */
+.video-figure { margin: 32px 0 0; max-width: 960px; }
+.video-figure video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #f2eee5;
+  box-shadow: var(--shadow);
+}
+.video-figure figcaption { margin-top: 10px; font-size: 13px; color: var(--ink-3); line-height: 1.75; }
+
 /* shirube の処理の流れと構成（Q6 の図 2） */
 .arch { margin-top: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-elev); padding: 14px; display: grid; gap: 12px; }
 .arch-row { display: grid; grid-template-columns: 5.5em minmax(0, 1fr); gap: 8px 10px; align-items: stretch; }
