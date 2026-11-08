@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>いちばん苦労した開発経験：運営会社を特定する LLM の精度改善 | 髙橋 浩樹</title>
+  <meta name="description" content="Baseconnect の長期インターンで、店舗の運営会社を特定する本番の LLM パイプラインの精度を 69.8% から 90.6% に上げ、評価への合わせ込みに気づいて評価を作り直した経験。">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="いちばん苦労した開発経験 | 髙橋 浩樹">
+  <meta property="og:description" content="誤りを段階別に数え、揺れから施策の効果を切り離し、合わせ込みに気づいて評価を作り直した。">
+  <meta name="theme-color" content="#f6f6f2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+  <script>document.documentElement.classList.add("js")</script>
+  <script src="assets/main.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">髙橋 浩樹 <small>Hiroki Takahashi</small></a>
+      <nav class="site-nav" aria-label="サイト内の移動">
+        <ul>
+          <li><a href="index.html">トップ</a></li>
+          <li><a href="work.html" aria-current="page">精度改善</a></li>
+          <li><a href="eval.html">評価の高速化</a></li>
+          <li><a href="workstyle.html">仕事の進め方</a></li>
+          <li><a href="shirube.html">shirube</a></li>
+          <li><a href="tonari.html">となり</a></li>
+          <li><a href="index.html#contact">連絡先</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap">
+      <div class="doc-hero">
+        <p class="crumbs"><a href="index.html">トップ</a> / 仕事 / 精度改善</p>
+        <p class="eyebrow">Baseconnect 株式会社 ・ 長期インターン ・ 技術的にいちばん苦労した開発経験</p>
+        <h1>店舗の運営会社を特定する LLM パイプラインの精度改善と、評価の作り直し</h1>
+        <p class="lead">営業向け企業データベースでは、営業の連絡先は店舗ではなく、その店舗を運営する会社にあります。運営会社を Web 調査と LLM で特定する本番のパイプラインを改善しました。違う会社を出すと、営業は意思決定者のいない会社に連絡してしまうので、誤りを増やさないことを最優先にしました。</p>
+        <div class="stat-row">
+          <div class="mini-stat"><b>69.8% → 90.6%</b><span>精度（改善に使った 879 店舗）</span></div>
+          <div class="mini-stat"><b>63.6% → 77.9%</b><span>カバレッジ（一度も使っていない 200 店舗。本番に入っていた値と比較）</span></div>
+          <div class="mini-stat"><b>136 → 44 件</b><span>違う会社を出した件数（879 店舗）</span></div>
+        </div>
+      </div>
+
+      <div class="doc-layout">
+        <nav class="toc" aria-label="このページの目次" data-spy>
+          <p>目次</p>
+          <ol>
+            <li><a href="#overview">概要</a></li>
+            <li><a href="#background">開発内容</a></li>
+            <li><a href="#result">結果</a></li>
+            <li><a href="#challenges">苦労したこと・工夫したこと</a></li>
+            <li><a href="#learned">この経験から</a></li>
+          </ol>
+        </nav>
+
+        <article class="doc">
+          <section id="overview" aria-labelledby="h-overview">
+            <h2 id="h-overview"><span class="idx">01</span>概要</h2>
+            <dl class="facts">
+              <dt>期間</dt>
+              <dd>2026 年 8 月〜10 月（インターン自体は 2026 年 4 月〜。約 7 か月・週 4 日／約 30 時間）</dd>
+              <dt>技術</dt>
+              <dd>Python、Dagster、社内 GPU でホストした LLM（Qwen 系の 35B MoE）、形態素解析（UniDic）、検索 API・クローリング、PostgreSQL、AWS（SQS・S3）、Parquet・DuckDB、GitHub Actions、Claude Code</dd>
+              <dt>体制</dt>
+              <dd>エンジニア約 10 名のデータ基盤チーム。店舗データ（数百万件規模）を社員エンジニア 1 名と 2 人で担当。正解データの作成は QA 担当、コードレビューは社員エンジニアが行う。変更はテストを付けて小さな PR に分け、レビューを受けてマージする</dd>
+              <dt>役割</dt>
+              <dd>既存の本番パイプラインの精度改善と、評価の作り直しを主に担当（分析・設計・実装・検証）。採点の基準も自分で作った</dd>
+              <dt>参考 URL</dt>
+              <dd>社内のコードのため公開していません（社内システム名・店舗名は伏せています）</dd>
+            </dl>
+          </section>
+
+          <section id="background" aria-labelledby="h-background">
+            <h2 id="h-background"><span class="idx">02</span>開発内容</h2>
+            <p>店舗ごとに Web を検索し、取得したページを LLM に読ませて、運営会社を法人番号の 1 社まで特定する本番パイプライン（データベースの数十万店舗に運営会社を供給）の精度改善を任されました。目標は精度・カバレッジともに 95% でした。</p>
+            <ol class="flow" style="--n:5" aria-label="処理の流れ">
+              <li><b>検索・取得</b>店舗名と住所で Web を検索し、ページを取得</li>
+              <li><b>候補の抽出</b>ページから社名の候補を切り出す</li>
+              <li><b>LLM の判定</b>候補のうち運営会社はどれかを判定</li>
+              <li><b>名寄せ</b>社名を法人番号の 1 社に決める</li>
+              <li><b>登記の照合</b>閉鎖・合併した法人を除く</li>
+            </ol>
+          </section>
+
+          <section id="result" aria-labelledby="h-result">
+            <h2 id="h-result"><span class="idx">03</span>結果</h2>
+            <p>改善に一度も使っていないテスト用の 200 店舗で、本番に入っている値と比べました（区分の分け方は下の 04）。精度はほぼそのままに、カバレッジを 14 ポイント上げています。</p>
+            <div class="table-wrap">
+              <table class="wide">
+                <caption>本番から抜き出した店舗を 3 つに分けて、本番に入っていた値と比較</caption>
+                <thead>
+                  <tr><th scope="col">区分</th><th scope="col" class="n">精度（今回）</th><th scope="col" class="n">カバレッジ（今回）</th><th scope="col" class="n">精度（本番の値）</th><th scope="col" class="n">カバレッジ（本番の値）</th></tr>
+                </thead>
+                <tbody>
+                  <tr><th scope="row">テスト用（一度も見ていない）</th><td class="n">89.6%</td><td class="n good">77.9%</td><td class="n">89.1%</td><td class="n">63.6%</td></tr>
+                  <tr><th scope="row">検証用（件数だけを見た）</th><td class="n">89.7%</td><td class="n good">81.8%</td><td class="n">86.4%</td><td class="n">62.1%</td></tr>
+                  <tr><th scope="row">開発用（中を見て規則を考えた）</th><td class="n">89.6%</td><td class="n good">76.1%</td><td class="n">84.1%</td><td class="n">61.3%</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="table-note">正解データに会社がある店舗で数えた（精度 = 正解 ÷（正解＋誤答）、カバレッジ = 正解 ÷（正解＋誤答＋抽出漏れ））。今回の精度は 3 区分でそろっていて（89.6〜89.7%）、開発用に合わせ込んだ跡は見えない（200 店舗なので誤差の幅はある）。</p>
+
+            <div class="table-wrap">
+              <table>
+                <caption>改善に使った正解データ付きの 879 店舗（法人番号で採点）</caption>
+                <thead><tr><th scope="col">指標</th><th scope="col" class="n">改善前</th><th scope="col" class="n">改善後</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">精度（値を出したうち正しい割合）</th><td class="n">69.8%</td><td class="n good">90.6%</td></tr>
+                  <tr><th scope="row">カバレッジ（正解データに会社がある 463 店舗のうち、正しく出せた割合）</th><td class="n">67.8%</td><td class="n good">86.0%</td></tr>
+                  <tr><th scope="row">誤答＋過抽出（違う会社を出した／運営会社が無い・確認できない店舗に会社を出した）</th><td class="n">136 件</td><td class="n good">44 件</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="table-note">精度 = 正解 ÷（正解＋誤答＋過抽出）、カバレッジ = 正解 ÷（正解＋誤答＋抽出漏れ）。5 本の PR に分けてレビューを受け、本番のコードにマージした。</p>
+          </section>
+
+          <section id="challenges" aria-labelledby="h-challenges">
+            <h2 id="h-challenges"><span class="idx">04</span>苦労したこと・工夫したこと</h2>
+
+            <div class="case">
+              <div class="case-head"><span class="idx">01</span><h3>直営か加盟店か、同名の別法人か</h3></div>
+              <p class="case-catch">社名が読めても、それが運営会社とは限らない。</p>
+              <ul class="points">
+                <li>採点を、社名ではなく法人番号の一致に変えた</li>
+                <li>LLM に判断材料（住所に登記された会社、社名が載っていた欄、ページのドメイン）を渡し、「読んではいけない会社」を明文化した</li>
+                <li>名寄せは完全一致の社名を優先し、同点なら店舗の都道府県で絞った</li>
+                <li>採った法人を国税庁の公表データで照合し、閉鎖は出さず、合併は承継先に寄せた</li>
+              </ul>
+              <details>
+                <summary>詳しく読む</summary>
+                <dl>
+                  <dt>課題</dt>
+                  <dd>チェーン店は本部の直営店と加盟店（フランチャイズ）が混ざり、加盟店で本部を出すと誤りになり、直営のブランドで加盟店に寄せても誤る。社名が読めても、同名の別法人、「〇〇ホールディングス」と事業会社、閉鎖・合併した法人の中から 1 社に決める必要がある。しかも評価は社名で採点していて、同名の別法人を出しても正解に数えていた。</dd>
+                  <dt>工夫</dt>
+                  <dd>ブランドから本部を即答する層は、即答した 119 件がすべて正しいことを全数で確かめて残し、即答できない店だけをページから判定した。LLM には、ページ上のどの欄の社名か（「運営会社」か「募集主」か）も渡した。名寄せは「ホールディングス」との差を別に扱い、同名の候補が 1 社だけなら都道府県で絞らず、本社が別の県にある全国チェーンを落とさないようにした。加盟店の扱いは正解データの作成者と基準をすり合わせた。ページだけでは決めきれない型は、ブランドのマスタに本部の直営割合を持たせれば止められると示して引き継いだ。</dd>
+                </dl>
+              </details>
+            </div>
+
+            <div class="case">
+              <div class="case-head"><span class="idx">02</span><h3>誤りの原因を切り分ける</h3></div>
+              <p class="case-catch">直す場所を、誤りの件数で決める。</p>
+              <ul class="points">
+                <li>記録に、値を消した段・LLM が退けた候補の理由・例外の実際の型・コードの版を足した</li>
+                <li>誤りを 4 つの原因に機械的に分け、件数の多い所から直した</li>
+                <li>出力形式を変えた自分の変更 2 件が解析失敗を 8 → 364 件、2 → 29 件に増やしていたので撤回し、JSON の型を生成時に強制しない呼び出しが原因だと突き止めた</li>
+                <li>採否は「増える正解」と「新しく生む誤り」の両方で決めた（正解 74 件に誤り 230 件の案は採らない）</li>
+              </ul>
+              <details>
+                <summary>詳しく読む</summary>
+                <dl>
+                  <dt>課題</dt>
+                  <dd>判定の記録は残っていたが、どの段で値を消したか、例外の本当の型（リトライの例外に包まれて消えていた）はログにしか無く、誤りを段階別に数えられなかった。その中で、LLM の出力形式を変えた自分の変更 2 件が、応答の解析失敗を増やしていた。2 件目は誤答の増減だけを見て、一度採用していた。</dd>
+                  <dt>工夫</dt>
+                  <dd>誤りを「材料が無い／候補にしていない／判定で落ちた／別の法人になった」に機械的に分けて、直す場所を件数で決めた。自分の変更 2 件は、同じ原因で説明できるはずだと考えて呼び出し側の設定を読み、原因を突き止めた。以後、変更は解析失敗と、正解 → 誤りを含む全方向の動きで判定し、出力の順序はテストで固定した。</dd>
+                </dl>
+              </details>
+            </div>
+
+            <div class="case">
+              <div class="case-head"><span class="idx">03</span><h3>改善が本物か、揺れか分からない</h3></div>
+              <p class="case-catch">揺れを測ってから、効果を数える。</p>
+              <ul class="points">
+                <li>コードを変えずに流し直すだけで、28〜40 店舗の結果が入れ替わった</li>
+                <li>検索結果をキャッシュで固定した</li>
+                <li>LLM は本文が同じ 338 ページで判定の反転 0 件を実測した</li>
+                <li>効果は、取得したページが前後で同じ店舗だけで数えた</li>
+              </ul>
+              <details>
+                <summary>詳しく読む</summary>
+                <dl>
+                  <dt>課題</dt>
+                  <dd>1 つの施策で動くのは数件なので、全体の精度で採否を決めると、効かない施策を採ってしまう。</dd>
+                  <dt>工夫</dt>
+                  <dd>temperature 0 でも GPU の推論は揺れうるので、LLM の判定が変わらないことは前提にせず実測した。残る揺れはページの取得だと分かったので、施策の効果は、取得したページが前後で同じ店舗だけで数えた。</dd>
+                </dl>
+              </details>
+            </div>
+
+            <div class="case">
+              <div class="case-head"><span class="idx">04</span><h3>改善に使った店舗に、合わせ込んでいた</h3></div>
+              <p class="case-catch">改善に使っていない店舗でも通る規則だけを残す。</p>
+              <ul class="points">
+                <li>自分が入れた出典のない 14 行の表が精度の約 2pt を作っていた。本番では根拠なく約 4,400 店舗の答えを変えるので、数字が下がるのを承知で外した</li>
+                <li>本番から抜き出した 1,800 店舗を、開発用・検証用・テスト用（最後に 1 回だけ測る）に分けた</li>
+                <li>規則は「その店舗のための例外」ではなく「同じ型の店舗に効く条件」で書き直した</li>
+                <li>まったく違う会社を出す誤りには、値を採ったページでその会社の立場を LLM に聞く、最後の検査を入れた</li>
+              </ul>
+              <details>
+                <summary>詳しく読む</summary>
+                <dl>
+                  <dt>課題</dt>
+                  <dd>14 行の表を外しても、新しい 400 店舗で測り直すと精度は 62% だった。外れた 50 件を 1 件ずつ見ると、改修前からの誤りが 36 件、改善で足した規則が別の店舗で外れたものが 14 件だった。</dd>
+                  <dt>工夫</dt>
+                  <dd>1,800 店舗は難しさの偏りをそろえて、開発用（1,000 店舗。中を見て規則を考える）・検証用（600 店舗。件数だけを見る）・テスト用（200 店舗）に分け、開発用と検証用の両方で、増える正解と新しく生む誤りを数えて採否を決めた。最後の検査は、モールの管理会社、別の会社の求人広告、隣の店のインボイス番号などを出す誤りが対象で、施設の管理会社・別の店・広告と読めるときだけ値を捨てる。迷うときは値を残す方に倒し、当て直して正しい答えを 1 件も捨てないことを確かめた。マスタの値が原因の誤りはコードで上書きせず、マスタの担当者に修正を依頼した。</dd>
+                </dl>
+              </details>
+            </div>
+
+            <div class="callout">
+              <p><strong>目標の 95% には届きませんでした。</strong>誤答と抽出漏れの 69 件を本文と 1 件ずつ突き合わせると、実装で動かせると確かめられたのは 7 件でした（正しい社名がページに無いのが 18 件、候補にあるのに採れていないのが 29 件など）。構造的な不足だと上長に示して区切り、届かせる条件と原因別の件数をつけて引き継ぎました。</p>
+            </div>
+          </section>
+
+          <section id="learned" aria-labelledby="h-learned">
+            <h2 id="h-learned"><span class="idx">05</span>この経験から</h2>
+            <p>LLM のように確率的に間違うシステムでは、まず「何を、どう測れば本番で正しいと言えるか」を決めることがいちばん大事だと学びました。改善に使った店舗で 90% と出ても、それは本番の精度ではありませんでした。今は、数字が上がったときほど理由を確かめ、根拠が無ければ自分の変更でも外します。</p>
+            <p>この改善は、施策を 1 つ試すたびに数時間待つ評価で回していました。その不便から、次に評価を数十秒で回す基盤を作りました（<a href="eval.html">評価の高速化</a>）。</p>
+          </section>
+
+          <nav class="doc-next" aria-label="ほかのページ">
+            <a href="index.html"><small>← 戻る</small><b>トップ</b></a>
+            <a class="is-next" href="eval.html"><small>次へ →</small><b>評価の高速化</b></a>
+          </nav>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>© 2026 髙橋 浩樹</p>
+      <p><a href="index.html#contact">連絡先</a></p>
+    </div>
+  </footer>
+</body>
+</html>

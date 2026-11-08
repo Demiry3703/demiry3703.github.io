@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>仕事の進め方：データの誤りを直し、同じ誤りを二度と入れない | 髙橋 浩樹</title>
+  <meta name="description" content="長期インターンでの仕事の進め方。データの修正と再発防止を組で入れ、誤りを原因別に数え、変更は同じ店舗で前後を比べる。ルールと LLM、AI と自分の分担。">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="仕事の進め方 | 髙橋 浩樹">
+  <meta property="og:description" content="データの誤りを直し、同じ誤りを二度と入れない。">
+  <meta name="theme-color" content="#f6f6f2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+  <script>document.documentElement.classList.add("js")</script>
+  <script src="assets/main.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">髙橋 浩樹 <small>Hiroki Takahashi</small></a>
+      <nav class="site-nav" aria-label="サイト内の移動">
+        <ul>
+          <li><a href="index.html">トップ</a></li>
+          <li><a href="work.html">精度改善</a></li>
+          <li><a href="eval.html">評価の高速化</a></li>
+          <li><a href="workstyle.html" aria-current="page">仕事の進め方</a></li>
+          <li><a href="shirube.html">shirube</a></li>
+          <li><a href="tonari.html">となり</a></li>
+          <li><a href="index.html#contact">連絡先</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap">
+      <div class="doc-hero">
+        <p class="crumbs"><a href="index.html">トップ</a> / 仕事 / 仕事の進め方</p>
+        <p class="eyebrow">Baseconnect 株式会社 ・ 長期インターン ・ 仕事の進め方</p>
+        <h1>データの誤りを直し、<br>同じ誤りを二度と入れない</h1>
+        <p class="lead">精度の改善だけでなく、本番の店舗データに入った誤りを直す仕事も担当しています。誤りを 1 件見つけたら、同じ原因の店舗を数えて直し、取り込みと生成の側でも同じ誤りが入らないようにします。</p>
+      </div>
+
+      <div class="doc-layout">
+        <nav class="toc" aria-label="このページの目次" data-spy>
+          <p>目次</p>
+          <ol>
+            <li><a href="#fixes">修正の例</a></li>
+            <li><a href="#prevent">直して、入口でも止める</a></li>
+            <li><a href="#causes">誤りを原因別に数える</a></li>
+            <li><a href="#compare">前後を比べる</a></li>
+            <li><a href="#rules">ルールと LLM の分担</a></li>
+            <li><a href="#monitoring">監視の穴まで追う</a></li>
+            <li><a href="#ai">AI との分担</a></li>
+            <li><a href="#tools">不便は道具で減らす</a></li>
+            <li><a href="#database">データベース・API</a></li>
+          </ol>
+        </nav>
+
+        <article class="doc">
+          <section id="fixes" aria-labelledby="h-fixes">
+            <h2 id="h-fixes"><span class="idx">01</span>修正の例</h2>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th scope="col">誤り</th><th scope="col">直したこと</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">開業日の取り違え</th><td>記事の公開日や商業施設の開業日を、店舗の開業日として取っていた。日付の要素を除き、施設の開業日を弾くガードと登記系サイトの除外を入れた（社内の精度検証で 45.7% → 90.4%）</td></tr>
+                  <tr><th scope="row">取り込みで正しい値を消す</th><td>店舗の一括取り込み API（Next.js）で、「まだ取れていない（null）」と「該当なし（空配列）」を区別し、取れなかっただけで既存の値を消さないようにした。手で直してロックした値も上書きしない</td></tr>
+                  <tr><th scope="row">全曜日が定休の営業時間</th><td>既存の 102 件を空に戻し、取り込み時に同じ値を弾くガードを入れた</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>店舗の属性を抽出する LLM パイプラインの精度（2026 年 5 月〜7 月）</h3>
+            <p>開業日・客席数・駐車場・決済手段の誤りを型に分けて対処しました（記事の公開日や入居施設の開業日の取り違え、法人登記サイトの日付の誤採用、全角数字の取りこぼしなど）。</p>
+            <div class="table-wrap">
+              <table>
+                <caption>社内の精度検証の値（運営会社の特定とは別の採点。母集団・時点はプロパティごとに異なる）</caption>
+                <thead><tr><th scope="col">プロパティ</th><th scope="col" class="n">精度 改善前 → 後</th><th scope="col" class="n">カバレッジ 改善前 → 後</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">開業日</th><td class="n">45.7 → 90.4%</td><td class="n">28.7 → 70.0%</td></tr>
+                  <tr><th scope="row">客席数</th><td class="n">73.0 → 94.0%</td><td class="n">67.0 → 80.8%</td></tr>
+                  <tr><th scope="row">駐車場</th><td class="n">75.0 → 91.4%</td><td class="n">54.3 → 72.5%</td></tr>
+                  <tr><th scope="row">決済手段</th><td class="n">47.0 → 90.8%</td><td class="n">32.4 → 78.0%</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="table-note">検索 API を単価約 17 分の 1 の API に移し、検索費用を 1 店舗あたり 1.4 円から 0.08 円にした。</p>
+          </section>
+
+          <section id="prevent" aria-labelledby="h-prevent">
+            <h2 id="h-prevent"><span class="idx">02</span>直して、入口でも止める</h2>
+            <p><strong>既存データの修正と再発防止を、必ず組で入れる。</strong>誤りが見つかったら、同じ原因の店舗がどれだけあるかを数え、修正のバッチで既存のデータを直します。同時に、取り込み時のガードで同じ誤りを弾き、誤りを生んだ抽出や判定の処理も直します。</p>
+            <ol class="flow" style="--n:5" aria-label="修正と再発防止の流れ">
+              <li><b>範囲を数える</b>同じ原因の店舗を洗い出す</li>
+              <li><b>既存データを直す</b>修正のバッチ</li>
+              <li><b>入口で止める</b>取り込み時のガード</li>
+              <li><b>発生源を直す</b>抽出・判定の処理</li>
+              <li><b>前後を比べる</b>直った件数と新しい誤りの両方</li>
+            </ol>
+            <p style="margin-top:1.2em">これまでに、電話番号の表記（中継番号・内線・+81）、地名だけの店名や住所が混ざった店名、座標、全曜日が定休の営業時間、開業日の桁落ち、店舗として扱わない業種、1 つの URL への大量の紐づけを、この形で直しました。</p>
+          </section>
+
+          <section id="causes" aria-labelledby="h-causes">
+            <h2 id="h-causes"><span class="idx">03</span>誤りを、原因別に数える</h2>
+            <p><strong>直す場所は、件数で決める。</strong>判定の記録に、値を消した段とその材料、LLM が退けた候補の理由、例外の実際の型を残し、誤りを 4 つの原因に機械的に分けています。どこを直せば何件動くかが見えるので、件数の多い所から手を付けます。</p>
+            <ul class="chips" aria-label="誤りの分け方">
+              <li>材料が無い</li>
+              <li>候補にしていない</li>
+              <li>判定で落ちた</li>
+              <li>別の法人になった</li>
+            </ul>
+          </section>
+
+          <section id="compare" aria-labelledby="h-compare">
+            <h2 id="h-compare"><span class="idx">04</span>変更は、同じ店舗で前後を比べる</h2>
+            <p><strong>正しくなった件数と、新しく生んだ誤りの両方を数える。</strong>同じ店舗・同じ基準で変更の前後を比べ、PR には次のように両方を書きます。同じコードを流し直すだけで数十店舗の結果が入れ替わるので、取得したページが前後で同じ店舗だけで比べます。</p>
+            <p class="diff-example" aria-label="PR に書く例：正解 プラス 16、誤り マイナス 2"><span class="plus">正解 +16</span><span>／</span><span class="minus">誤り −2</span></p>
+            <p style="margin-top:1em">抽出漏れを減らそうと検索語を広げた自分の変更は、差し引きでマイナスだったので自分で戻しました。</p>
+          </section>
+
+          <section id="rules" aria-labelledby="h-rules">
+            <h2 id="h-rules"><span class="idx">05</span>ルールで決めるもの、LLM に任せるもの</h2>
+            <p><strong>条件を書けるものはルール、文脈を読むものは LLM。</strong>電話番号や日付の表記、登記系サイトの除外、法人番号での名寄せのように、条件をはっきり書けるものはルールで処理します。ページの会社がどの立場で載っているか（運営会社か、求人の募集主か、施設の管理会社か）のように文脈を読む判断は LLM に任せ、判断の材料を渡します。LLM の出力は理由を先に書かせ、その順序はテストで固定しています。</p>
+            <div class="compare">
+              <div>
+                <h3>ルール</h3>
+                <p class="sub">条件をはっきり書けるもの</p>
+                <ul>
+                  <li><b>表記の正規化</b>：電話番号・日付</li>
+                  <li><b>除外の条件</b>：登記系のサイト</li>
+                  <li><b>名寄せ</b>：法人番号で 1 社に</li>
+                </ul>
+              </div>
+              <div>
+                <h3>LLM</h3>
+                <p class="sub">文脈を読む判断</p>
+                <ul>
+                  <li><b>会社の立場を読む</b>：運営・募集主・管理会社</li>
+                  <li><b>判断材料を渡す</b>：登記・欄・ドメイン</li>
+                  <li><b>理由 → 答えの順</b>：テストで固定</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section id="monitoring" aria-labelledby="h-monitoring">
+            <h2 id="h-monitoring"><span class="idx">06</span>原因を、監視の穴まで追う</h2>
+            <p><strong>店舗が増えない理由を、データと仕組みの両方から。</strong>店舗のデータが増えていないように見えたとき、全行の作成日を調べて、ある時期から新しい店舗が 1 件も作られていないと特定しました。日次の監視が状態の変化しか数えておらず、収集が止まっても気づけない作りだったことも指摘しました。旧収集の検索語から検索した範囲を復元し、まだ検索していない業種と、回収できる店舗数の見込みを示しました。</p>
+            <ol class="flow" style="--n:4" aria-label="調べた順">
+              <li><b>作成日を数える</b>全行の作成日</li>
+              <li><b>止まった時期を特定</b>新規作成が 0 件</li>
+              <li><b>監視の穴を指摘</b>状態の変化しか数えていない</li>
+              <li><b>次の手を示す</b>未検索の業種と回収の見込み</li>
+            </ol>
+          </section>
+
+          <section id="ai" aria-labelledby="h-ai">
+            <h2 id="h-ai"><span class="idx">07</span>AI との分担</h2>
+            <p><strong>速さは AI に、どれを採るかは自分で決める。</strong>調査と実装の多くは Claude Code に任せています。誤答・過抽出・抽出漏れといった症状ごとに分析のセッションを分けて並列で動かし、全セッションが読む前提（定義、数字の出し方、報告の単位）は自分が書きます。AI の結論には根拠のデータ行を示させ、別のセッションに独立して確かめさせて、裏付けの無いものは差し戻します。AI が 66 件に影響するとした不具合が、確かめると 1 件だったこともあります。</p>
+            <p>どの結論を採るかは自分が決め、判断の理由、採らなかった案、測った値は PR の本文に残します。</p>
+            <ol class="flow" style="--n:4" aria-label="AI との進め方">
+              <li><b>前提を書く</b>定義・数字の出し方・報告の単位</li>
+              <li><b>症状ごとに分析</b>誤答・過抽出・抽出漏れを並列で</li>
+              <li><b>独立して確かめる</b>根拠のデータ行で裏を取る</li>
+              <li><b>採否を決めて残す</b>PR の本文に理由と測った値</li>
+            </ol>
+          </section>
+
+          <section id="tools" aria-labelledby="h-tools">
+            <h2 id="h-tools"><span class="idx">08</span>仕事の不便は、道具で減らす</h2>
+            <p><strong>自分とチームが繰り返す作業から。</strong>マージされた PR を毎週分類して Slack に投稿する仕組み（GitHub Actions）を作り、分類できなかった PR が見えるようにして、PR タイトルの決まりを 2 つのリポジトリの開発ガイドに入れました。評価を速く回す基盤（<a href="eval.html">評価の高速化</a>）も、施策を試すたびに数時間待つ不便から始まっています。</p>
+            <ol class="flow" style="--n:3" aria-label="週次の PR まとめ">
+              <li><b>マージされた PR を集める</b>GitHub Actions</li>
+              <li><b>種類ごとに分類する</b>分類できない PR も見せる</li>
+              <li><b>Slack に投稿</b>タイトルの決まりを開発ガイドへ</li>
+            </ol>
+          </section>
+
+          <section id="database" aria-labelledby="h-database">
+            <h2 id="h-database"><span class="idx">09</span>データベース・API の設計</h2>
+            <p>パイプラインの出力を受け取る本番のデータベースと API（TypeScript・PostgreSQL）も担当しています。</p>
+
+            <div class="case">
+              <div class="case-head"><span class="idx">A</span><h3>店舗の手動登録：NULL を許して一意制約を残す</h3></div>
+              <p class="case-catch">最短の直し方が、既存の安全網を素通りしないかを読む。</p>
+              <ul class="points">
+                <li>Google Maps の識別子が必須かつ一意なのに、手動登録では毎回同じ空文字が入り、2 件目から必ず失敗していた</li>
+                <li>ダミー値を入れる案は、識別子が空かどうかで判定する安全網 3 か所を素通りし、外部 API に課金付きの無効な要求を送ると分かって却下した</li>
+                <li>PostgreSQL の UNIQUE は NULL どうしを重複とみなさないので、識別子を NULL 可にし、一意制約は残した</li>
+              </ul>
+              <details>
+                <summary>詳しく読む</summary>
+                <dl>
+                  <dt>工夫</dt>
+                  <dd>パイプライン側の入力の型が識別子を必須とし、未知のキーを拒否していたので、デプロイの順序をパイプライン → DB に固定し、5 本の PR に分けた。重複登録の検出は、数百万行に部分一致用の索引を新たに保つより、同じ店名での再申請を既存の索引が効く完全一致（入力を全角・半角の 2 通りにして照合）で拾う方が安いと判断した。</dd>
+                </dl>
+              </details>
+            </div>
+
+            <div class="case">
+              <div class="case-head"><span class="idx">B</span><h3>下流を止めない SNS のスキーマ移行</h3></div>
+              <p class="case-catch">どの時点でも、旧カラムだけで動けるように移す。</p>
+              <ul class="points">
+                <li>SNS アカウントが 1 カラムの配列にまとまっていて、部分更新で Instagram だけが見つかると X が消えた</li>
+                <li>JSON の 1 カラムにまとめる案（取り出しが複雑で、型を DB で保証しにくい）と比べ、プラットフォーム別の 3 カラムを足した</li>
+                <li>旧カラムは下流が読むので完全なリストとして残し、冪等で途中から再開できるバッチで値を写した</li>
+              </ul>
+              <details>
+                <summary>詳しく読む</summary>
+                <dl>
+                  <dt>課題</dt>
+                  <dd>ロックと取得元の URL も SNS 全体で 1 つしか持てず、手で直した値が別の SNS の更新と一緒に上書きされた。</dd>
+                  <dt>工夫</dt>
+                  <dd>値を写すバッチ → 管理画面 → 検証ツール → 製造側の順に読み書き先を移した（expand / contract）。分類のドメイン判定も部分一致から末尾一致に直し、誤分類されていた 1,826 件の URL を是正した。</dd>
+                </dl>
+              </details>
+            </div>
+
+            <ul class="bullets">
+              <li>3 つの取り込み経路で結果が違った住所の正規化を、4 段階に分けて 1 経路に寄せた。最後はパイプライン側が住所の構成要素を送る形に変え、DB 側の再正規化を不要にした。</li>
+            </ul>
+          </section>
+
+          <nav class="doc-next" aria-label="ほかのページ">
+            <a href="eval.html"><small>← 前へ</small><b>評価の高速化</b></a>
+            <a class="is-next" href="shirube.html"><small>次へ →</small><b>shirube（個人開発）</b></a>
+          </nav>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>© 2026 髙橋 浩樹</p>
+      <p><a href="index.html#contact">連絡先</a></p>
+    </div>
+  </footer>
+</body>
+</html>

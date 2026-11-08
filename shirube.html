@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>shirube（道標）：企画と技術設計 | 髙橋 浩樹</title>
+  <meta name="description" content="なりたい職業から、取る授業とその理由、卒業までの時間割を組む Web アプリ shirube。RAG と LLM による授業の選び直しを、評価データと検定で直しています。">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="shirube（道標）：企画と技術設計 | 髙橋 浩樹">
+  <meta property="og:description" content="職業からシラバスを RAG で引き、理由つきの時間割を組む。個人で設計から本番公開まで。">
+  <meta name="theme-color" content="#f6f6f2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+  <script>document.documentElement.classList.add("js")</script>
+  <script src="assets/main.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">髙橋 浩樹 <small>Hiroki Takahashi</small></a>
+      <nav class="site-nav" aria-label="サイト内の移動">
+        <ul>
+          <li><a href="index.html">トップ</a></li>
+          <li><a href="work.html">精度改善</a></li>
+          <li><a href="eval.html">評価の高速化</a></li>
+          <li><a href="workstyle.html">仕事の進め方</a></li>
+          <li><a href="shirube.html" aria-current="page">shirube</a></li>
+          <li><a href="tonari.html">となり</a></li>
+          <li><a href="index.html#contact">連絡先</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap">
+      <div class="doc-hero">
+        <p class="crumbs"><a href="index.html">トップ</a> / 作ったもの / shirube</p>
+        <p class="eyebrow">個人開発 ・ 2026.10– ・ 本番公開中</p>
+        <h1>shirube（道標）<br>なりたい職業から、卒業までの時間割を組む</h1>
+        <p class="lead">職業名を入れると、LLM が必要なスキルを読み取り、シラバスを埋め込み検索して候補を集め、LLM が候補を読み直して理由つきで授業を選び（RAG と LLM によるリランク）、学期ごとの時間割に並べます。一人で設計し、本番に公開しました。改善を始める前に、精度・揺れ・費用を測る評価の仕組みを作り、変更を採るかどうかはそれで決めています。</p>
+        <div class="link-row">
+          <a class="btn btn-primary" href="https://shirube.duckdns.org">デモを開く <span aria-hidden="true">↗</span></a>
+          <a class="btn" href="https://github.com/h11roki/Shirube">GitHub <span aria-hidden="true">↗</span></a>
+          <a class="ext" href="https://github.com/h11roki/Shirube/blob/main/docs/evaluation-log.md">評価の記録</a>
+        </div>
+      </div>
+
+      <div class="doc-layout">
+        <nav class="toc" aria-label="このページの目次" data-spy>
+          <p>目次</p>
+          <ol>
+            <li><a href="#overview">概要</a></li>
+            <li><a href="#why">背景と目的</a></li>
+            <li><a href="#features">主な機能</a></li>
+            <li><a href="#results">成果</a></li>
+            <li><a href="#architecture">処理の流れと構成</a></li>
+            <li><a href="#prompt">プロンプトとコンテキスト</a></li>
+            <li><a href="#decisions">技術選定と設計の判断</a></li>
+            <li><a href="#problems">直面した課題と解決</a></li>
+            <li><a href="#evaluation">評価の仕組み</a></li>
+            <li><a href="#changes">採った改善・採らなかった改善</a></li>
+            <li><a href="#now">今の値と、これから</a></li>
+          </ol>
+        </nav>
+
+        <article class="doc">
+          <section id="overview" aria-labelledby="h-overview">
+            <h2 id="h-overview"><span class="idx">01</span>概要</h2>
+            <dl class="facts">
+              <dt>期間</dt>
+              <dd>2026 年 10 月 14 日〜（継続中）。作り始めて約 2 週間半で本番に公開</dd>
+              <dt>体制</dt>
+              <dd>個人。コードの多くは Claude Code に書かせ、設計、評価の条件、改善の採否は自分で決めて ADR に残した（99 本、2026 年 11 月 8 日時点）</dd>
+              <dt>担当範囲</dt>
+              <dd>企画、設計、実装、評価、本番の構成と運用のすべて</dd>
+              <dt>技術</dt>
+              <dd>Next.js（App Router）・TypeScript・Auth.js ／ FastAPI・SQLAlchemy（クリーンアーキテクチャ）／ PostgreSQL + pgvector ／ OpenAI API・LangChain の構造化出力 ／ Playwright・axe ／ Docker Compose・GitHub Actions・AWS EC2</dd>
+              <dt>規模</dt>
+              <dd>コミット 980 超、PR 100 超、試験 約 1,300 件（2026 年 11 月 6 日時点）</dd>
+              <dt>URL</dt>
+              <dd><a class="ext" href="https://shirube.duckdns.org">https://shirube.duckdns.org</a>（ログイン前に見本の道標を見られます。作成は今はテストの利用者に限っています）<br><a class="ext" href="https://github.com/h11roki/Shirube">github.com/h11roki/Shirube</a></dd>
+            </dl>
+          </section>
+
+          <section id="why" aria-labelledby="h-why">
+            <h2 id="h-why"><span class="idx">02</span>背景と目的</h2>
+            <p>履修を選ぶとき、シラバスを 1 つずつ読んでも、その授業が将来の仕事のどこで役に立つのかは分かりにくく、時間割の重なりも自分で確かめる必要があります。しかも職業と授業は使う言葉が違う（データサイエンティストと確率統計など）ので、キーワード検索ではつながりません。</p>
+            <p>shirube は、なりたい職業から逆算して、シラバスの中身を根拠に授業を選び、選んだ理由を添えて、卒業までの学期ごとの時間割に並べます。最初の対象は自分の学科で、公開シラバス 530 ページを取り込みました。</p>
+          </section>
+
+          <section id="features" aria-labelledby="h-features">
+            <h2 id="h-features"><span class="idx">03</span>主な機能</h2>
+            <ul class="bullets">
+              <li>職業の中心になる授業（<strong>柱</strong>）と、その前提になる授業（<strong>礎</strong>）を選び、授業ごとに理由とシラバスの原ページへのリンクを付ける。</li>
+              <li>残りの学期に、配当回生、開講学期、コマの重なり、1 学期 16 単位の上限を守って並べる。路線図と週の時間割表で見られる。</li>
+              <li>作成には 10〜30 秒かかるので非同期のジョブにし、作成中は 4 つの段のどこまで進んだかと待ち時間を出す。ページを閉じても作り続ける。</li>
+              <li>曖昧な職業名は、どう読んだかを画面に出す。もう取った授業は覚えて候補から外す。スマホ幅でも使え、WCAG 2.2 AA を目安にした。</li>
+            </ul>
+            <div class="figure-pair">
+              <figure class="figure">
+                <img src="assets/img/shirube-route.webp" width="1280" height="1290" loading="lazy" alt="データサイエンティスト行きの道標。3 回生春学期の駅に、データエンジニアリング基礎、確率統計などの授業が切符の形で並び、それぞれに柱か礎の印、選んだ理由、コマ、単位、シラバスへのリンクが付いている">
+                <figcaption>結果の画面（データサイエンティストの例）。授業ごとに柱か礎か、選んだ理由、コマ、単位、シラバスへのリンクを載せ、礎から柱へのつながりを印で示す。冒頭に、必修や卒業要件は見ていないこと、AI が選ぶので誤りがあることを書いている。</figcaption>
+              </figure>
+              <figure class="figure is-phone">
+                <img src="assets/img/shirube-progress.webp" width="600" height="1248" loading="lazy" alt="作成中の画面。4 つの段を駅に見立てて、いまどこまで進んだかと待ち時間の目安を出している">
+                <figcaption>作成中の画面（スマホ幅）。worker の 4 つの段を駅に見立てて進みを見せる。</figcaption>
+              </figure>
+            </div>
+            <figure class="figure">
+              <img src="assets/img/shirube-timetable.webp" width="1280" height="620" loading="lazy" alt="学期ごとの週の時間割表。曜日と時限のマスに選んだ授業が入っている">
+              <figcaption>週の時間割表。コマが重ならないように並べる。</figcaption>
+            </figure>
+          </section>
+
+          <section id="results" aria-labelledby="h-results">
+            <h2 id="h-results"><span class="idx">04</span>成果</h2>
+            <p>最初の基準と改善後の設定を、同じ時間帯に交互に流して比べました。費用を変えずに、関係のない授業を減らし、作り直したときの揺れを小さくしました。</p>
+            <div class="table-wrap">
+              <table>
+                <caption>開発用 30 職業 × 3 回、2026 年 10 月 24 日、職業ごとの並べ替え検定</caption>
+                <thead><tr><th scope="col">指標</th><th scope="col" class="n">最初の基準</th><th scope="col" class="n">改善後</th><th scope="col" class="n">p 値</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">選んだ授業のうち、関係なしの割合（誤りの目安）</th><td class="n">27.6%</td><td class="n good">21.6%</td><td class="n">0.023</td></tr>
+                  <tr><th scope="row">柱の適合率</th><td class="n">35.7%</td><td class="n good">42.1%</td><td class="n">0.004</td></tr>
+                  <tr><th scope="row">作り直したときの結果の重なり（Jaccard。高いほど揺れが小さい）</th><td class="n">0.52</td><td class="n good">0.72</td><td class="n">&lt; 0.001</td></tr>
+                  <tr><th scope="row">道標 1 件の LLM の費用</th><td class="n">0.83 円</td><td class="n">0.83 円</td><td class="n">—</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top:1em">その後、柱の理由に「仕事のどこで使うか」を書かせる変更で、理由が具体的な柱の割合を 36.8% から 67.1% に上げました（開発用 50 職業、差の 95% 区間 +17.8〜+42.7 ポイント）。測る前に採る条件を決めた変更は 9 件で、6 件を採り、3 件は採りませんでした（<a href="#changes">下の表</a>）。</p>
+
+            <h3>技術面の特徴</h3>
+            <ol class="bullets">
+              <li>エージェントにはせず、読み取り（LLM）、検索（埋め込み）、選び直し（LLM）、配置（アルゴリズム）の 4 段に固定した。期待する授業をどの段で落としたかまで数えられる。</li>
+              <li>評価データ（開発用 50 職業、ホールドアウト 20 職業）と比べる道具を先に作り、採る条件は変える前に ADR に書いてから測った。</li>
+              <li>3 回の多数決で誤りと揺れを減らし、増えた費用は候補の絞り込み、入力キャッシュ、読み取りの使い回しで戻した。</li>
+              <li>公開を前提に、1 日の上限、前払い、候補に無い授業を返せない構造化出力、15 分ごとの外からの監視を入れた。</li>
+            </ol>
+          </section>
+
+          <section id="architecture" aria-labelledby="h-architecture">
+            <h2 id="h-architecture"><span class="idx">05</span>処理の流れと構成</h2>
+            <p>推薦は、エージェントにはせず、読み取り（LLM）、検索（埋め込み）、選び直し（LLM）、配置（アルゴリズム）の 4 段に固定しました。期待する授業をどの段で落としたかまで数えるためです。</p>
+            <p class="table-note">FastAPI（クリーンアーキテクチャ）、Next.js、PostgreSQL + pgvector、AWS EC2 と Docker Compose、GitHub Actions。各枠の番号は、判断を記録した ADR です（押すと GitHub で読めます）。</p>
+
+            <div class="arch" role="group" aria-label="処理の流れと構成">
+              <div class="arch-row">
+                <p class="arch-label">取り込み<small>事前</small></p>
+                <ol class="arch-cells arch-flow">
+                  <li><b>シラバスの取得</b>Playwright で描画後の HTML を保存して解析。時間割表の PDF と結ぶ<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0003-playwright-scraping.md">0003</a><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0012-timetable-source.md">0012</a></span></li>
+                  <li><b>節ごとのチャンク</b>概要、到達目標、授業計画の節ごと。1,589 件<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0005-section-chunking.md">0005</a></span></li>
+                  <li class="is-external"><b>埋め込み</b>text-embedding-3-large、1536 次元。同じ本文は計算し直さない<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0015-chunk-embeddings.md">0015</a><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0063-search-by-skill.md">0063</a></span></li>
+                  <li class="is-store"><b>PostgreSQL + pgvector</b>科目、チャンク、埋め込み。本番へは科目の表だけ移す</li>
+                </ol>
+              </div>
+              <div class="arch-row">
+                <p class="arch-label">受け付け</p>
+                <ol class="arch-cells arch-flow">
+                  <li><b>画面（Next.js）</b>Google でログイン。利用者番号入りの短い JWT を付けて転送<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0027-auth-backend.md">0027</a><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0039-request-guard.md">0039</a></span></li>
+                  <li><b>POST /plans（FastAPI）</b>1 人 1 日 3 件、全体 30 件、作成中 1 件を advisory lock の中で数える<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0038-plan-quota.md">0038</a></span></li>
+                  <li class="is-store"><b>plans 表（待ち行列）</b>「待ち」で保存して 202 を返す。worker が SKIP LOCKED で取る<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0029-plan-jobs.md">0029</a></span></li>
+                  <li><b>結果画面</b>2 秒ごとに状態を取り、段の進みと待ち時間を出す</li>
+                </ol>
+              </div>
+              <div class="arch-row">
+                <p class="arch-label">推薦<small>worker</small></p>
+                <ol class="arch-cells arch-flow">
+                  <li><b>① 読み取り</b>gpt-5.4-mini。職業名を解釈、前提、スキル 3〜6 個に直す。職業名ごとに使い回す<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0018-llm-pipeline.md">0018</a><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0052-reading-cache.md">0052</a></span></li>
+                  <li><b>② 検索</b>pgvector。職業全体とスキルごとのクエリの順位から交互に 20 件。全件を厳密に計算<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0063-search-by-skill.md">0063</a></span></li>
+                  <li><b>③ 選び直し</b>gpt-5.4-nano × 3。候補の抜粋を読み、柱と礎を理由つきで返す。3 回並列に呼び、2 票以上を残す<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0023-foundation-links-core.md">0023</a><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0049-selection-votes.md">0049</a></span></li>
+                  <li><b>④ 配置</b>自作のアルゴリズム。回生、学期、コマ、16 単位の上限を守り、貪欲法で詰める。LLM は使わない<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0007-greedy-timetable.md">0007</a><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0025-roadmap-candidates-by-semester.md">0025</a></span></li>
+                </ol>
+                <p class="arch-note"><b>推薦キャッシュ（7 日）</b>：職業名と条件、モデル、プロンプト、コードの指紋が同じなら ①〜③ を飛ばし、LLM を呼ばずに作る。コードを変えると前の結果は当たらなくなる<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0092-recommendation-cache.md">0092</a></span></p>
+              </div>
+              <div class="arch-row">
+                <p class="arch-label">運用</p>
+                <ul class="arch-cells">
+                  <li><b>作成の記録</b>段ごとの秒、トークン、失敗の種類。利用者番号と入力は残さない<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0087-build-records.md">0087</a></span></li>
+                  <li><b>版の管理</b>モデル、票の数、指示文を設定で替え、実験の結果に設定と commit を残す<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0048-recommendation-experiments.md">0048</a><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0068-selection-prompt-setting.md">0068</a></span></li>
+                  <li><b>デプロイ</b>CI がすべて通った版だけサーバーが取りに行く。応えなければ前の版に戻す<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0094-pull-deploy.md">0094</a></span></li>
+                  <li><b>監視と費用</b>15 分ごとに外から health（DB、待ち、OpenAI の残高）を確かめる。前払い<span class="adrs"><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0075-production-setup.md">0075</a><a href="https://github.com/h11roki/Shirube/blob/main/docs/adr/0095-health-monitor.md">0095</a></span></li>
+                </ul>
+              </div>
+              <p class="arch-legend"><span><i class="lg-solid"></i>実線の枠はすべて自分で設計した</span><span><i class="lg-dashed"></i>外部の API（OpenAI）</span><span><i class="lg-store"></i>データの置き場</span></p>
+            </div>
+
+            <figure class="figure">
+              <picture>
+                <source srcset="assets/img/shirube-architecture-dark.webp" media="(prefers-color-scheme: dark)">
+                <img src="assets/img/shirube-architecture.webp" width="1600" height="1284" loading="lazy" alt="構成図。利用者のブラウザから Caddy、Next.js、FastAPI、PostgreSQL（pgvector）へ。worker が待ち行列から取り出し、OpenAI の gpt-5.4-mini、text-embedding-3-large、gpt-5.4-nano を呼ぶ。すべて AWS EC2 上の Docker Compose で動き、GitHub Actions が CI とイメージの作成、監視を担う">
+              </picture>
+              <figcaption>構成図。AWS EC2（t4g.small）の上で Docker Compose で動かし、HTTPS は Caddy。CI とイメージの作成、外からの監視は GitHub Actions。</figcaption>
+            </figure>
+          </section>
+
+          <section id="prompt" aria-labelledby="h-prompt">
+            <h2 id="h-prompt"><span class="idx">06</span>プロンプトとコンテキストの設計</h2>
+            <p>どちらの呼び出しも、LangChain の構造化出力（json_schema、strict）で呼んでいます。</p>
+            <div class="case">
+              <div class="case-head"><span class="idx">①</span><h3>読み取り（gpt-5.4-mini）</h3></div>
+              <dl>
+                <dt>入力</dt>
+                <dd>役割（進路の相談役）。学科の授業がそのまま備える職業はそのまま読み、細かい職種だけ広く読むという決まり。利用者の職業名。</dd>
+                <dt>出力</dt>
+                <dd>職業名の解釈、前提（無ければ null）、スキル 3〜6 個（20 字以内の名詞句）。</dd>
+                <dt>工夫</dt>
+                <dd>スキルは製品名ではなく、授業で学ぶ分野の名前で書かせ（React ではなく「Web の仕組みとプログラミング」）、検索のクエリをシラバスの言葉に寄せた。前提を書かずに言い換えた答えは、コードで元の職業名に戻す。</dd>
+              </dl>
+            </div>
+            <div class="case">
+              <div class="case-head"><span class="idx">③</span><h3>選び直し（gpt-5.4-nano × 3）</h3></div>
+              <dl>
+                <dt>入力</dt>
+                <dd>柱と礎の定義と選ぶ順。職業、前提、スキル。候補 20 件の抜粋（概要 450 字、到達目標 250 字、各回のテーマ 350 字）。</dd>
+                <dt>出力</dt>
+                <dd>科目名と、前提にする柱は、候補の列挙（enum）に限る。理由は 80 字以内。</dd>
+                <dt>工夫</dt>
+                <dd>抜粋の切り方を、正解を作った判定者と同じにし、入力の違いが評価に混ざらないようにした。抜粋に無いことは書かせない。2 票目を 0.5 秒遅らせて、入力キャッシュに当てる。</dd>
+              </dl>
+            </div>
+          </section>
+
+          <section id="decisions" aria-labelledby="h-decisions">
+            <h2 id="h-decisions"><span class="idx">07</span>技術選定と設計の判断</h2>
+            <p>どれも、測った値か、試した結果から決めました。</p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th scope="col">判断</th><th scope="col">理由</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">エージェントにせず、段を固定したワークフローにする</th><td>エージェントにすると、どこで誤ったかを分けて測れない。段ごとに指標を持たせた。LLM の出力を道具の呼び出しや DB の問い合わせに使わないので、プロンプトインジェクションの影響も画面の文で止まる</td></tr>
+                  <tr><th scope="row">検索で絞ってから、LLM が読み直す</th><td>検索の上位 10 件の約 2 割は、判定で関係なし。LLM が中身を読めば外せ、理由も根拠を持って書ける。全科目を読ませると入力が 5 倍以上になり、他の学科に広げられない</td></tr>
+                  <tr><th scope="row">段ごとにモデルを分ける</th><td>読み取りは、曖昧な職業名 4 件で前提を書けたのが mini は 4 件、nano は 1 件だったので mini。選び直しは 10 職業 × 2 回で nano が mini と同等以上、費用は約 4 分の 1 なので nano</td></tr>
+                  <tr><th scope="row">スキルごとのクエリで検索する（クエリ分解）</th><td>取りこぼしの多くは、スキルが 1 つのクエリの中で薄まることが原因だった。50 職業で交互に比べ、関係なしが 23.0% から 15.1% に下がった（p = 0.001）</td></tr>
+                  <tr><th scope="row">時間割は貪欲法、作成は非同期</th><td>LLM に組ませるとコマが重なる。同期で作ると、画面がタイムアウトしたあとに保存され、作り直しで費用が二重にかかる</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="problems" aria-labelledby="h-problems">
+            <h2 id="h-problems"><span class="idx">08</span>直面した課題と解決</h2>
+            <div class="case">
+              <div class="case-head"><span class="idx">01</span><h3>LLM の答えが揺れ、関係のない授業が混ざった</h3></div>
+              <dl>
+                <dt>課題</dt>
+                <dd>最初の基準では、関係なしが 23%、作り直したときの重なりが 0.45 だった。</dd>
+                <dt>解決</dt>
+                <dd>選び直しを 3 回並列に呼んで 2 票以上だけ残すと、関係なしは 10% に下がったが、費用は 0.81 円から 1.57 円に増えた。そこで候補を 30 件から 20 件に絞り（1.14 円）、2 票目を遅らせて入力キャッシュの当たりを 50% から 63% に上げ（1.01 円）、職業の読み取りを使い回した。最初の基準と交互に流して比べると、同じ 0.83 円のまま、関係なしは 27.6% から 21.6%、重なりは 0.52 から 0.72 になった。</dd>
+              </dl>
+            </div>
+            <div class="case">
+              <div class="case-head"><span class="idx">02</span><h3>公開すると、費用を使い込まれるおそれがあった</h3></div>
+              <dl>
+                <dt>課題</dt>
+                <dd>はじめは失敗した道標を 1 日の上限に数えていなかった。職業名に指示を混ぜてわざと失敗させれば、上限なしに費用を使えると見直しで気づいた。</dd>
+                <dt>解決</dt>
+                <dd>失敗も上限に数えるように直した。出力は enum で候補の授業に限り、道標は本人にしか見えない（他人の道標は 404）ので、混ぜられた指示の影響は本人の画面に閉じる。指示を混ぜた職業名 3 件を流して、指示に従わず、候補に無い授業も API キーも出ないことを記録し、指示文かモデルを替えるたびに流し直している。</dd>
+              </dl>
+            </div>
+          </section>
+
+          <section id="evaluation" aria-labelledby="h-evaluation">
+            <h2 id="h-evaluation"><span class="idx">09</span>評価の仕組み</h2>
+            <p>LLM の出力はもっともらしく見えるので、感覚ではなく数字で採否を決めるために、改善の前に作りました。</p>
+            <ol class="flow" style="--n:5" aria-label="評価の流れ">
+              <li><b>評価データ</b>開発用 50 職業、ホールドアウト 20 職業</li>
+              <li><b>交互に流す</b>2 つの設定を、職業と回ごとに交互に流す</li>
+              <li><b>比べる</b>並べ替え検定と区間。どの段で落としたかも数える</li>
+              <li><b>ADR</b>採る条件は測る前に書く。採らない判断も残す</li>
+              <li><b>ホールドアウト</b>直しを決めたあとに 1 回だけ、平均と検定だけ見る</li>
+            </ol>
+            <h3>正解の作り方</h3>
+            <p>職業ごとの正解は無いので、Claude のサブエージェント 3 体（採用担当のエンジニア、カリキュラムを作る教員、進路を考える 3 回生）が、候補の授業を「中心・土台・関係なし」で独立に判定した多数決にしました（LLM-as-a-Judge）。期待する授業は開発用で 151、ホールドアウトで 58 です。アプリが使う OpenAI とは系統を分けています。</p>
+            <p>理由の文は、具体的・ぼんやり・無しの 3 段で同じ 3 体が判定しました（柱の理由での一致は Fleiss の κ 0.80）。安く回すため gpt-5.4-nano と mini で判定器も作りましたが、ホールドアウト 75 件で Cohen の κ が 0.54 と、事前に決めた 0.6 に届かなかったので採りませんでした。</p>
+            <p>ホールドアウトは評価データに印を持たせ、実験の道具が職業ごとの結果を出さないようにして、うっかり中身を見る事故を防いでいます。</p>
+
+            <h3>評価の作り方を直したこと</h3>
+            <ul class="bullets">
+              <li><strong>A/A テストで偽の差が出た。</strong>同じ設定どうしでも、ブートストラップの区間では 10%（名目の 5% の 2 倍）で差ありと出た。職業ごとの並べ替え検定に替えると 5% に収まった。</li>
+              <li><strong>流した時刻で結果がずれた。</strong>同じ設定とコードでも、別の時刻に流すと関係なしが 9 ポイントほど動いた。2 つの設定を職業と回ごとに交互に流し、時刻のずれを差から除いた。</li>
+              <li><strong>開発用に合わせ込んでいた。</strong>検索の改善は、直しを決めるときに見た 30 職業では候補の再現率が 6.4 ポイント上がったが、あとで足した 20 職業では 1.2 ポイント下がった。そこでホールドアウトを別に取っておくことにした。</li>
+            </ul>
+          </section>
+
+          <section id="changes" aria-labelledby="h-changes">
+            <h2 id="h-changes"><span class="idx">10</span>採った改善と、採らなかった改善</h2>
+            <p>測る前に条件を決めて試した変更です。行ごとに測った時期と職業の数が違うので、比べられるのは各行の前と後だけです。</p>
+            <div class="table-wrap">
+              <table class="wide">
+                <thead><tr><th scope="col">変えたこと</th><th scope="col">ねらい</th><th scope="col">結果</th><th scope="col">判断</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">選び直しを 3 回の多数決にする</th><td class="aim">関係なし</td><td>関係なし 23% → 10%（差あり）。費用は約 1.9 倍</td><td><span class="verdict yes">採った</span><br>費用は別に戻した</td></tr>
+                  <tr><th scope="row">職業の読み取りを使い回す</th><td class="aim">揺れと費用</td><td>重なり 0.56 → 0.73（差あり）。覚えた職業は 1.00 円 → 0.59 円</td><td><span class="verdict yes">採った</span></td></tr>
+                  <tr><th scope="row">スキルごとのクエリで検索する</th><td class="aim">候補の再現率</td><td>候補の再現率は 50 職業で +3.3 ポイント（p = 0.391、差なし）。関係なしは 23.0% → 15.1%（p = 0.001）</td><td><span class="verdict yes">採った</span><br>悪化せず誤りが減った</td></tr>
+                  <tr><th scope="row">読み取りの指示に学科の分野を書く</th><td class="aim">候補の再現率</td><td>候補の再現率 0.910 → 0.865（p = 0.105）。分野の言葉を写し、職業に固有のスキルが押し出された</td><td><span class="verdict no">採らなかった</span></td></tr>
+                  <tr><th scope="row">迷った授業は選ばない</th><td class="aim">関係なし</td><td>関係なし 開発用 16.4% → 10.6%（p = 0.004）、ホールドアウト 15.0% → 12.2%（p = 0.210）で効き目は半分</td><td><span class="verdict yes">採った</span><br>のちに次の行で替えた</td></tr>
+                  <tr><th scope="row">少しでも役立つ授業は、迷っても選ぶ</th><td class="aim">道標を広く取る</td><td>柱の数 開発用 4.60 → 5.44、ホールドアウト 4.35 → 6.15（差あり）。関係なし 12.3% → 16.4%</td><td><span class="verdict yes">採った</span><br>網羅を優先。採る条件が甘かったことも記録</td></tr>
+                  <tr><th scope="row">3 回のうち 1 回でも選べば残す</th><td class="aim">柱を増やす</td><td>柱 5.66 → 6.20（p = 0.076）。関係なし 13.4% → 19.7%（p = 0.003）</td><td><span class="verdict no">採らなかった</span></td></tr>
+                  <tr><th scope="row">柱の理由に、仕事のどこで授業のどの内容を使うかを書かせる</th><td class="aim">理由の具体さ</td><td>理由が具体的な柱 36.8% → 67.1%（区間 +17.8〜+42.7）。関係なしは悪化せず、柱の数は 5.74 → 5.14（差あり）。理由を書きにくい授業を柱にしなくなったとみている</td><td><span class="verdict yes">採った</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="table-note">このほか、理由を判定する安い判定器（gpt-5.4-nano・mini）は、一致の基準に届かず採らなかった（上の 09）。</p>
+          </section>
+
+          <section id="now" aria-labelledby="h-now">
+            <h2 id="h-now"><span class="idx">11</span>今の値と、これから</h2>
+            <div class="table-wrap">
+              <table>
+                <caption>選ぶ授業を広げた変更のあとに各 1 回（2026 年 11 月 4 日）</caption>
+                <thead><tr><th scope="col">指標</th><th scope="col" class="n">開発用 50 職業</th><th scope="col" class="n">ホールドアウト 20 職業</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">選んだ授業のうち関係なし</th><td class="n">16.4%</td><td class="n">17.5%</td></tr>
+                  <tr><th scope="row">期待する授業を柱に選んだ割合</th><td class="n">67.5%</td><td class="n">89.7%</td></tr>
+                  <tr><th scope="row">柱の適合率</th><td class="n">37.5%</td><td class="n">42.3%</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="table-note">ホールドアウトの 89.7% は、同じ時刻に流した前の設定（69.0%）から跳ねた 1 回の値で、揺れを含む。表 2 の最後の変更のあと、開発用は 15.1%、63.6%、37.4%（ホールドアウトは未測定）。</p>
+
+            <h3>まだ足りないこと</h3>
+            <ul class="bullets">
+              <li>正解は LLM の判定者 3 体の多数決で、人の判定との一致はまだ測っていない。</li>
+              <li>学生にはまだ使ってもらっておらず、役に立つかは確かめていない。</li>
+              <li>柱の適合率が 37〜42% と低い。網羅を優先して、柱を広く選ぶようにしたため。</li>
+              <li>必修、卒業要件、前提科目の順序は見ておらず、対象も 1 学科だけ。</li>
+            </ul>
+
+            <h3>次にやること</h3>
+            <ul class="bullets">
+              <li>学科の学生や教員に一部を判定してもらい、Claude の判定者との一致（κ）を測る。</li>
+              <li>期待する 151 件のうち、選び直しで落としたのが 13%、読み取りで 12%、検索で 3%。次は読み取りの揺れを直すが、同じ 50 職業で直し続けると合わせ込むので、見ていない職業を足してから確かめる。</li>
+              <li>学生に使ってもらい、作り直しの回数や、もう取ったと答えた授業を、作成の記録と合わせて見る。</li>
+              <li>必修と卒業要件を入れ、時間割を整数計画に替える。先に、貪欲法で要件を満たせない道標の数を測る。</li>
+            </ul>
+          </section>
+
+          <nav class="doc-next" aria-label="ほかのページ">
+            <a href="workstyle.html"><small>← 前へ</small><b>仕事の進め方</b></a>
+            <a class="is-next" href="tonari.html"><small>次へ →</small><b>となり（JPHACKS 2026）</b></a>
+          </nav>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>© 2026 髙橋 浩樹</p>
+      <p><a href="index.html#contact">連絡先</a></p>
+    </div>
+  </footer>
+</body>
+</html>

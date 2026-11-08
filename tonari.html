@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>となり（JPHACKS 2026）| 髙橋 浩樹</title>
+  <meta name="description" content="手元を見て、詰まったときだけ声をかける、答えを言わない AI 家庭教師「となり」。JPHACKS 2026 に 4 人チームで出場し、API サーバと静止の判定、答え漏れの検査、デプロイを担当しました。">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="となり（JPHACKS 2026）| 髙橋 浩樹">
+  <meta property="og:description" content="詰まったときだけ声をかける、答えを言わない AI 家庭教師。">
+  <meta name="theme-color" content="#f6f6f2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+  <script>document.documentElement.classList.add("js")</script>
+  <script src="assets/main.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">髙橋 浩樹 <small>Hiroki Takahashi</small></a>
+      <nav class="site-nav" aria-label="サイト内の移動">
+        <ul>
+          <li><a href="index.html">トップ</a></li>
+          <li><a href="work.html">精度改善</a></li>
+          <li><a href="eval.html">評価の高速化</a></li>
+          <li><a href="workstyle.html">仕事の進め方</a></li>
+          <li><a href="shirube.html">shirube</a></li>
+          <li><a href="tonari.html" aria-current="page">となり</a></li>
+          <li><a href="index.html#contact">連絡先</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap">
+      <div class="doc-hero">
+        <p class="crumbs"><a href="index.html">トップ</a> / 作ったもの / となり</p>
+        <p class="eyebrow">チーム開発（4 人）・ JPHACKS 2026 ・ 2026.10</p>
+        <h1>となり<br>詰まったときだけ声をかける、答えを言わない AI 家庭教師</h1>
+        <p class="lead">紙に書いている手元をスマホで見て、手が止まったときだけ、答えではなく次の一歩を声と字幕で示します。JPHACKS 2026 に 4 人チームで出場し、Hack Day の 2 日間（10 月 17〜18 日）で作り、公開しました。</p>
+        <div class="link-row">
+          <a class="btn btn-primary" href="https://youtube.com/shorts/04hRV0uHNMU">紹介動画を見る <span aria-hidden="true">↗</span></a>
+          <a class="btn" href="https://github.com/jphacks/os_2601">GitHub <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+
+      <div class="doc-layout">
+        <nav class="toc" aria-label="このページの目次" data-spy>
+          <p>目次</p>
+          <ol>
+            <li><a href="#overview">概要</a></li>
+            <li><a href="#why">背景</a></li>
+            <li><a href="#mine">担当したこと</a></li>
+            <li><a href="#team">チームで並行して作るために</a></li>
+          </ol>
+        </nav>
+
+        <article class="doc">
+          <section id="overview" aria-labelledby="h-overview">
+            <h2 id="h-overview"><span class="idx">01</span>概要</h2>
+            <dl class="facts">
+              <dt>大会</dt>
+              <dd>JPHACKS 2026（大阪会場）。Hack Day 2026 年 10 月 17〜18 日</dd>
+              <dt>体制</dt>
+              <dd>4 人チーム。自分は API サーバ（状態の管理・ヒントの生成・答え漏れの検査）、手元の静止の判定、デプロイを担当。メンバーは学習者と運営の画面、キャラクターの切り替え、発表と実機での試験を担当</dd>
+              <dt>技術</dt>
+              <dd>Next.js・React・TypeScript・Tailwind CSS ／ FastAPI・Pydantic ／ Gemini API（構造化出力）／ VOICEVOX ／ Web Speech API ／ OpenAPI（API の仕様）</dd>
+              <dt>URL</dt>
+              <dd><a class="ext" href="https://github.com/jphacks/os_2601">github.com/jphacks/os_2601</a>　<a class="ext" href="https://youtube.com/shorts/04hRV0uHNMU">紹介動画</a></dd>
+            </dl>
+            <figure class="figure">
+              <img src="assets/img/tonari.webp" width="320" height="585" loading="lazy" style="max-width:260px" alt="となりの画面。一次方程式の問題文が左上に出て、キャラクターが「2 行目の x を単体にするため、両辺を同じ数でわってみて」とヒントを出している">
+              <figcaption>手が止まると、答えではなく次の一歩を声と字幕で示す。</figcaption>
+            </figure>
+          </section>
+
+          <section id="why" aria-labelledby="h-why">
+            <h2 id="h-why"><span class="idx">02</span>背景</h2>
+            <p>家で一人で宿題を解いていて詰まったとき、今の中高生は AI に聞きます。ただし聞くには、写真を撮り、アプリを開き、質問を打つ必要があり、手が止まって紙から目が離れます。そして AI は答えを出します。</p>
+            <p>家庭教師は、隣で手元を見ていて、止まった瞬間に「どこまでできた？」と聞いてくれます。答えは言いません。となりは、それを家にあるスマホでできるようにしました。</p>
+            <ul class="bullets">
+              <li><strong>聞かれる前に気づく</strong>：手が止まったことを、映像の動きから判定する。</li>
+              <li><strong>答えを言わない</strong>ことを、プロンプトだけに頼らず、サーバで機械的に守る。</li>
+              <li><strong>映像は残さない</strong>：送るのは動きの数値と、詰まったときの 1 枚だけ。</li>
+            </ul>
+          </section>
+
+          <section id="mine" aria-labelledby="h-mine">
+            <h2 id="h-mine"><span class="idx">03</span>担当したこと</h2>
+
+            <div class="case">
+              <div class="case-head"><span class="idx">01</span><h3>手元の静止の判定</h3></div>
+              <dl>
+                <dt>工夫</dt>
+                <dd>映像はブラウザの中で 64×36 に縮めて毎秒の差分を数値にし、映像そのものは送らず残さない。実機の iPhone で、書いているときと止まったときの値を測り、明るさの変化を除いて、静止に入る境目と抜ける境目を分けた（境目の近くで判定がばたつかないように）。</dd>
+              </dl>
+            </div>
+
+            <div class="case">
+              <div class="case-head"><span class="idx">02</span><h3>待たせない</h3></div>
+              <dl>
+                <dt>工夫</dt>
+                <dd>詰まりの約 3 秒前に写真を送ってヒントを作り始め、詰まった瞬間に AI を待たずに声の合成に入る。</dd>
+              </dl>
+            </div>
+
+            <div class="case">
+              <div class="case-head"><span class="idx">03</span><h3>答えを言わない</h3></div>
+              <dl>
+                <dt>工夫</dt>
+                <dd>AI に同じ呼び出しで問題も解かせ、ヒント文に答えや途中の値が含まれていれば、サーバで捨てて問い返しに差し替える。</dd>
+                <dt>結果</dt>
+                <dd>評価セット 55 件で、答え漏れの見逃しを 16/24 → 0/24 に減らし、誤検知は 0/31。ただし検査を直すのに使ったセットでの値で、答えを言い換えられると止められない。</dd>
+              </dl>
+            </div>
+          </section>
+
+          <section id="team" aria-labelledby="h-team">
+            <h2 id="h-team"><span class="idx">04</span>チームで並行して作るために</h2>
+            <p>チームで開発経験があるのは自分だけでした。メンバーが AI（Claude Code や Codex）と一緒に画面を作っても、API や共通の処理を壊さずに済むよう、事前に仕組みを用意しました。</p>
+            <ul class="bullets">
+              <li><strong>API の仕様とモックを先に用意</strong>：OpenAPI で仕様を決め、モックを用意して、画面を API の完成を待たずに並行して作れるようにした。</li>
+              <li><strong>担当外の変更を止める</strong>：人ごとに触ってよいフォルダを決め、git フック（pre-commit・pre-push）と CI で、担当外・保護ファイルの変更、main への直接の push、force push を止めた。</li>
+              <li><strong>AI が最初に読む決まりと手引き</strong>：CLAUDE.md・AGENTS.md に担当と禁止事項を書き、開発に慣れていないメンバー向けに AI 開発のガイドを書いた。担当外の変更が要るときは、自分で直さず頼んでもらう流れにした。</li>
+            </ul>
+          </section>
+
+          <nav class="doc-next" aria-label="ほかのページ">
+            <a href="shirube.html"><small>← 前へ</small><b>shirube（個人開発）</b></a>
+            <a class="is-next" href="index.html"><small>戻る →</small><b>トップ</b></a>
+          </nav>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>© 2026 髙橋 浩樹</p>
+      <p><a href="index.html#contact">連絡先</a></p>
+    </div>
+  </footer>
+</body>
+</html>

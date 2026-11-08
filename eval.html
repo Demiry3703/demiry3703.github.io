@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>評価の高速化：LLM パイプラインの評価を数時間から数十秒に | 髙橋 浩樹</title>
+  <meta name="description" content="外部呼び出しの記録と再生で、施策を 1 つ試すたびに数時間かかっていた LLM パイプラインの評価を、ネットワークに触れず、毎回同じ結果で回せるようにした（100 店舗を 48 秒）。">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="評価の高速化 | 髙橋 浩樹">
+  <meta property="og:description" content="LLM パイプラインの評価を、外部呼び出しの記録と再生で数時間から数十秒に。">
+  <meta name="theme-color" content="#f6f6f2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+  <script>document.documentElement.classList.add("js")</script>
+  <script src="assets/main.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">髙橋 浩樹 <small>Hiroki Takahashi</small></a>
+      <nav class="site-nav" aria-label="サイト内の移動">
+        <ul>
+          <li><a href="index.html">トップ</a></li>
+          <li><a href="work.html">精度改善</a></li>
+          <li><a href="eval.html" aria-current="page">評価の高速化</a></li>
+          <li><a href="workstyle.html">仕事の進め方</a></li>
+          <li><a href="shirube.html">shirube</a></li>
+          <li><a href="tonari.html">となり</a></li>
+          <li><a href="index.html#contact">連絡先</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap">
+      <div class="doc-hero">
+        <p class="crumbs"><a href="index.html">トップ</a> / 仕事 / 評価の高速化</p>
+        <p class="eyebrow">Baseconnect 株式会社 ・ 長期インターン ・ 設計・実装</p>
+        <h1>LLM パイプラインの評価を、数時間から数十秒に</h1>
+        <p class="lead">施策を 1 つ試すたびに数時間待っていた評価を、外部呼び出しの記録と再生で、ネットワークに触れず、毎回同じ結果で回せるようにしました。</p>
+        <div class="stat-row">
+          <div class="mini-stat"><b>2〜3 時間</b><span>これまで。900 店舗を 20 並列。外部サービスの状態で結果も揺れた</span></div>
+          <div class="mini-stat"><b>48 秒</b><span>記録と再生。100 店舗を 8 並列で採点。外への接続 0、毎回同じ結果</span></div>
+          <div class="mini-stat"><b>942 → 232 秒</b><span>コードを変えた後の取り直し（20 店舗）。足りない呼び出しだけを取り直す</span></div>
+        </div>
+      </div>
+
+      <div class="doc-layout">
+        <nav class="toc" aria-label="このページの目次" data-spy>
+          <p>目次</p>
+          <ol>
+            <li><a href="#overview">概要</a></li>
+            <li><a href="#replay">記録して、塞いで再生する</a></li>
+            <li><a href="#key">照合のキー</a></li>
+            <li><a href="#missing">記録漏れを静かな失敗にしない</a></li>
+            <li><a href="#breakdown">届いていない分の内訳</a></li>
+            <li><a href="#bugs">実データで不具合を潰す</a></li>
+          </ol>
+        </nav>
+
+        <article class="doc">
+          <section id="overview" aria-labelledby="h-overview">
+            <h2 id="h-overview"><span class="idx">01</span>概要</h2>
+            <dl class="facts">
+              <dt>期間</dt>
+              <dd>2026 年 10 月〜11 月</dd>
+              <dt>技術</dt>
+              <dd>Python（ContextVar）、pytest、GitHub Actions、JSONL の記録</dd>
+              <dt>体制・役割</dt>
+              <dd>社員エンジニアから「評価を 1 分で回す」という依頼と大枠の方針（外部サービスのクライアントの単位で記録する）を受け、細部の設計と実装、変える・残すの判断を担当した</dd>
+              <dt>参考 URL</dt>
+              <dd>社内のコードのため公開していません</dd>
+            </dl>
+            <h3>7 本の PR に分けてレビューを受けた</h3>
+            <ol class="steps-inline" aria-label="PR の分け方">
+              <li>挙動を変えない切り出し</li>
+              <li>記録と再生の仕組み</li>
+              <li>各サービスへの配線</li>
+              <li>保存形式</li>
+              <li>実行 CLI</li>
+              <li>採点</li>
+              <li>CI と記録データ</li>
+            </ol>
+          </section>
+
+          <section id="replay" aria-labelledby="h-replay">
+            <h2 id="h-replay"><span class="idx">02</span>記録して、ネットワークを塞いで再生する</h2>
+            <p><strong>本番と同じ処理を、外に出ずに何度でも流す。</strong>検索・クロール・LLM・住所の照合など、結果を左右する外部の呼び出しを一度だけ実際に呼んで記録します。評価のときはネットワークを塞ぎ、記録から結果を返して採点します。採点は PR ごとに CI のジョブでも回るので、変更のたびに同じ店舗で前後を比べられます。</p>
+            <ol class="flow" style="--n:4" aria-label="評価の流れ">
+              <li><b>記録する</b>外部の呼び出しを 1 回だけ実際に呼ぶ</li>
+              <li><b>再生する</b>ネットワークを塞ぎ、記録から返す</li>
+              <li><b>採点する</b>法人番号の一致で採点</li>
+              <li><b>PR ごとに回す</b>CI のジョブで、毎回同じ店舗で比べる</li>
+            </ol>
+          </section>
+
+          <section id="key" aria-labelledby="h-key">
+            <h2 id="h-key"><span class="idx">03</span>照合のキーは「結果を決める入力」</h2>
+            <p><strong>URL ではなく、サービス・メソッド・入力で引く。</strong>先行の試作は HTTP の層で URL だけを照合していて、住所の照合サービスに別の住所を送った呼び出しに、前の住所の結果を返していました。記録の単位を外部サービスのクライアントにし、キーを（サービス、メソッド、結果を決める入力）にして、この取り違えが起きない形にしました。</p>
+            <p>LLM の記録のキーには、プロンプトのテンプレート（system・user・出力スキーマ）のハッシュも入れました。文言を 1 つ変えると、その呼び出しだけが記録から外れて取り直されることを確かめています。</p>
+            <div class="table-wrap">
+              <table>
+                <caption>照合のキー</caption>
+                <thead><tr><th scope="col">キー</th><th scope="col">結果</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">URL だけ（試作）</th><td>別の住所の結果が返った</td></tr>
+                  <tr><th scope="row">サービス・メソッド・結果を決める入力</th><td class="good">同じ入力にだけ同じ結果を返す</td></tr>
+                  <tr><th scope="row">＋ プロンプトのハッシュ</th><td class="good">文言を変えた呼び出しだけ取り直す</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="missing" aria-labelledby="h-missing">
+            <h2 id="h-missing"><span class="idx">04</span>記録漏れを、静かな失敗にしない</h2>
+            <p><strong>止めるべきものは止め、一時的な失敗は固めない。</strong>既存のコードには「例外を受けて既定値に戻る」処理が多く、記録に無い呼び出しがそこで飲み込まれると、取得の失敗として扱われ、精度の変化に見えてしまいます。記録に無いことを知らせる例外は BaseException の子にして、必ず止まるようにしました。</p>
+            <p>一方で、503 やタイムアウトのような一時的な失敗は記録に固めず、その店舗を「不完全」として次の取り直しで取ります。既存の採点（TypeScript・テスト 0 件）は Python に移し、規則ごとにテストを書きました。</p>
+            <div class="table-wrap">
+              <table>
+                <caption>呼び出しの扱い</caption>
+                <thead><tr><th scope="col">場合</th><th scope="col">扱い</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">記録に無い呼び出し</th><td>その場で止める（BaseException の子）</td></tr>
+                  <tr><th scope="row">一時的な失敗（503・タイムアウト）</th><td>記録せず、その店舗を取り直す</td></tr>
+                  <tr><th scope="row">サイトが返したエラーページ</th><td>中身として記録する</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="breakdown" aria-labelledby="h-breakdown">
+            <h2 id="h-breakdown"><span class="idx">05</span>届いていない分は、内訳を測って次の手を決める</h2>
+            <p><strong>目標の 1 分に、CI では 79 秒。</strong>手元では 20 店舗を約 30 秒で回せますが、CI では 79 秒で、目標の 1 分に届いていません。内訳をタイマーで積算すると、時間の 62% が HTML の構文解析で、そのうち 65% が同じ HTML の解析し直しでした。並列を 8 から 12 に増やしても速くならなかった（CPU を取り合う）ので、次は解析結果を使い回す改修を狙います。</p>
+            <div class="breakdown" role="img" aria-label="CI の 79 秒の内訳。HTML の構文解析が 62%、そのうち 65%（全体の約 40%）が同じ HTML の解析し直し">
+              <div class="breakdown-head"><span>CI での 1 回の評価</span><span><b>79 秒</b>　目標は 60 秒</span></div>
+              <div class="breakdown-bar" aria-hidden="true">
+                <span class="seg-reparse" style="width:40.3%"></span>
+                <span class="seg-parse" style="width:21.7%"></span>
+              </div>
+              <ul class="breakdown-legend" aria-hidden="true">
+                <li><i style="background:var(--accent)"></i><b>約 40%</b>同じ HTML の解析し直し（構文解析の 65%）。次の改修はここを狙う</li>
+                <li><i style="background:color-mix(in srgb, var(--accent) 40%, var(--bg-elev))"></i><b>約 22%</b>そのほかの HTML の構文解析</li>
+                <li><i style="background:var(--bg-sunken);border:1px solid var(--line)"></i><b>38%</b>それ以外</li>
+              </ul>
+            </div>
+            <div class="callout">
+              <p>最初は「時間の 8 割が 1 つの関数」とレビュー用の資料に書いていましたが、プロファイラの上乗せによる誤りでした。タイマーで測り直すと 2 割で、レビューに出す前に直しました。</p>
+            </div>
+          </section>
+
+          <section id="bugs" aria-labelledby="h-bugs">
+            <h2 id="h-bugs"><span class="idx">06</span>実データで回して、不具合を潰す</h2>
+            <p><strong>作った仕組みを、まず自分で疑う。</strong>本番のデータで回すと、記録と再生の仕組み自体の不具合が見つかりました。</p>
+            <div class="table-wrap">
+              <table>
+                <caption>見つけた不具合と直し方</caption>
+                <thead><tr><th scope="col">不具合</th><th scope="col">直し方</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">ページ本文の Unicode の行区切り（U+2028）で、記録の行が途中で切れる</th><td>改行（\n）だけで分けるよう修正</td></tr>
+                  <tr><th scope="row">再生用のプロセスが、import の時点でクラウドのメタデータへ接続しに行く</th><td>再生中は外に出ないよう修正</td></tr>
+                  <tr><th scope="row">レビューを待つ 1 週間で開発ブランチが 32 コミット進み、参照マスタの読み込みが変わった</th><td>記録の位置を読み込み関数の外側に移して 7 本を載せ直し、足りない呼び出しだけを取り直した（232 秒）</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="case">
+              <div class="case-head"><span class="idx">＋</span><h3>評価の全件実行で、結果が欠ける</h3></div>
+              <p class="case-catch">相手の障害も、こちらの弱さも、両方直す。</p>
+              <ul class="points">
+                <li>評価用の全件実行（200 店舗ずつ投入）で、1 回分の 200 店舗中 35 件の結果が欠けた</li>
+                <li>社内のクロール用 API が接続を受け付けなくなっていること（TCP 接続の 18.3% で SYN に応答なし）を、開いたポートと閉じたポートへの同時接続で 1 分で特定し、担当者に報告した</li>
+                <li>こちら側も、長いタイムアウトが接続確立にまで掛かってリトライが働いていなかったので、接続と応答待ちのタイムアウトを分け、止まっても実行全体が止まらないようにした</li>
+              </ul>
+            </div>
+          </section>
+
+          <nav class="doc-next" aria-label="ほかのページ">
+            <a href="work.html"><small>← 前へ</small><b>精度改善（いちばん苦労した経験）</b></a>
+            <a class="is-next" href="workstyle.html"><small>次へ →</small><b>仕事の進め方</b></a>
+          </nav>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>© 2026 髙橋 浩樹</p>
+      <p><a href="index.html#contact">連絡先</a></p>
+    </div>
+  </footer>
+</body>
+</html>
