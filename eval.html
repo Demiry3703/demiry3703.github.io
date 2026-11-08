@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>評価の高速化：LLM パイプラインの評価を数時間から数十秒に | 髙橋 浩樹</title>
-  <meta name="description" content="外部呼び出しの記録と再生で、施策を 1 つ試すたびに数時間かかっていた LLM パイプラインの評価を、ネットワークに触れず、毎回同じ結果で回せるようにした（100 店舗を 48 秒）。">
+  <title>評価の高速化：LLM パイプラインの評価を数時間から数分に | 髙橋 浩樹</title>
+  <meta name="description" content="外部呼び出しの記録と再生で、施策を 1 つ試すたびに数時間かかっていた LLM パイプラインの評価を、ネットワークに触れず、毎回同じ結果で回せるようにした（900 店舗で 2〜3 時間 → 約 8 分の見込み。100 店舗を 48 秒で採点）。">
   <meta property="og:type" content="article">
   <meta property="og:title" content="評価の高速化 | 髙橋 浩樹">
-  <meta property="og:description" content="LLM パイプラインの評価を、外部呼び出しの記録と再生で数時間から数十秒に。">
+  <meta property="og:description" content="LLM パイプラインの評価を、外部呼び出しの記録と再生で数時間から数分に。">
   <meta name="theme-color" content="#f6f6f2" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -43,11 +43,11 @@
       <div class="doc-hero">
         <p class="crumbs"><a href="index.html">トップ</a> / 仕事 / 評価の高速化</p>
         <p class="eyebrow">Baseconnect 株式会社 ・ 長期インターン ・ 設計・実装</p>
-        <h1>LLM パイプラインの評価を、数時間から数十秒に</h1>
+        <h1>LLM パイプラインの評価を、数時間から数分に</h1>
         <p class="lead">施策を 1 つ試すたびに数時間待っていた評価を、外部呼び出しの記録と再生で、ネットワークに触れず、毎回同じ結果で回せるようにしました。</p>
         <div class="stat-row">
-          <div class="mini-stat"><b>2〜3 時間</b><span>これまで。900 店舗を 20 並列。外部サービスの状態で結果も揺れた</span></div>
-          <div class="mini-stat"><b>48 秒</b><span>記録と再生。100 店舗を 8 並列で採点。外への接続 0、毎回同じ結果</span></div>
+          <div class="mini-stat"><b>2〜3 時間 → 約 8 分</b><span>900 店舗の評価。これまでは 20 並列で 2〜3 時間かかり、外部サービスの状態で結果も揺れた。約 8 分は、100 店舗を 48 秒で採点した実測からの見込み</span></div>
+          <div class="mini-stat"><b>48 秒</b><span>100 店舗を 8 並列で採点した実測。外への接続 0、毎回同じ結果</span></div>
           <div class="mini-stat"><b>942 → 232 秒</b><span>コードを変えた後の取り直し（20 店舗）。足りない呼び出しだけを取り直す</span></div>
         </div>
       </div>

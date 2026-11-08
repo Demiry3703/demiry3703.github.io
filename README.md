@@ -8,7 +8,7 @@ https://h11roki.github.io/
 |---|---|
 | `index.html` | トップ（自己紹介、仕事、作ったもの、進め方、経歴、スキル、連絡先） |
 | `work.html` | インターンでいちばん苦労した開発経験（LLM パイプラインの精度改善） |
-| `eval.html` | LLM パイプラインの評価を、数時間から数十秒に |
+| `eval.html` | LLM パイプラインの評価を、数時間から数分に |
 | `workstyle.html` | 仕事の進め方 |
 | `shirube.html` | 個人開発 shirube の企画と技術設計 |
 | `tonari.html` | JPHACKS 2026 のチーム開発 となり |
