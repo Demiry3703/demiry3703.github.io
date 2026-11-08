@@ -30,7 +30,6 @@
           <li><a href="#projects">作ったもの</a></li>
           <li><a href="#approach">進め方</a></li>
           <li><a href="#history">経歴</a></li>
-          <li><a href="#next">これから</a></li>
           <li><a href="#skills">スキル</a></li>
           <li><a href="#contact">連絡先</a></li>
         </ul>
@@ -43,11 +42,9 @@
     <section class="hero" id="top" aria-labelledby="hero-title">
       <div class="wrap hero-grid">
         <div>
-          <p class="eyebrow">2028 年卒 ・ ソフトウェアエンジニア志望（LLM・AI）</p>
           <h1 id="hero-title">LLM の出力を、<br><em>測ってから</em>直す。</h1>
           <div class="lead">
             <p>立命館大学 理工学部 電子情報工学科 3 回生の髙橋浩樹です。大学 3 年の春から Baseconnect で長期インターンをしていて、営業向け企業データベースのデータを作る本番の LLM パイプラインの精度改善と、その評価の仕組みを担当しています。個人では、なりたい職業から履修計画を組む Web アプリ <a href="shirube.html">shirube</a> を、設計から本番公開まで一人で作りました。</p>
-            <p>確率的に間違うシステムでは、「何を、どう測れば本番で正しいと言えるか」を先に決めることがいちばん大事だと考えています。数字が上がったときほど理由を確かめ、根拠がなければ自分の変更でも外します。</p>
           </div>
 
           <ul class="entry-list" aria-label="詳しく読む">
@@ -145,8 +142,7 @@
 
         <div class="work-grid">
           <div class="work-about reveal">
-            <p>エンジニア約 10 名のデータ基盤チームで、数百万件規模の店舗データを社員エンジニアと 2 人で担当しています。正解データの作成は QA 担当、コードレビューは社員エンジニアが行い、自分は分析・設計・実装・検証を担いました。</p>
-            <p>実装の多くは Claude Code に任せ、何を測るか、どの設計を採るかは自分で決めています。約半年で 204 本の PR を出し、160 本がマージされました（2026 年 10 月初め時点）。</p>
+            <p>エンジニア約 10 名のデータ基盤チームで、数百万件規模の店舗データを社員エンジニアと 2 人で担当しています。</p>
             <ul class="more-list">
               <li><a class="more" href="work.html">いちばん苦労した開発経験</a></li>
               <li><a class="more" href="eval.html">評価の高速化</a></li>
@@ -157,28 +153,24 @@
 
           <ol class="task-list reveal">
             <li>
-              <span class="task-date">2026.08–10</span>
               <div>
                 <h3><a href="work.html">店舗の運営会社を特定する LLM パイプラインの精度改善</a><span class="tag-main">いちばん苦労した経験</span></h3>
                 <p>誤りを段階別に数える記録を足して直す場所を件数で決め、結果の揺れから施策の効果を切り離して測った。改善に使った店舗への合わせ込みに気づき、評価用の店舗を分け直した。5 本の PR に分けてレビューを受け、本番にマージ。</p>
               </div>
             </li>
             <li>
-              <span class="task-date">2026.10–11</span>
               <div>
                 <h3><a href="eval.html">LLM パイプラインの評価を、数時間から数十秒に</a></h3>
                 <p>検索・クロール・LLM の呼び出しを記録し、ネットワークを塞いで再生・採点する CLI と CI のジョブを設計・実装した。プロンプトを変えた呼び出しだけが取り直される。7 本の PR に分けてレビューを受けた。</p>
               </div>
             </li>
             <li>
-              <span class="task-date">2026.05–09</span>
               <div>
                 <h3><a href="workstyle.html">データの誤りを直し、同じ誤りを二度と入れない</a></h3>
                 <p>店舗の属性の抽出で、開業日の精度を 45.7% → 90.4%、決済手段を 47.0% → 90.8% に（社内の精度検証）。既存データの修正と、取り込み時のガードを必ず組で入れている。</p>
               </div>
             </li>
             <li>
-              <span class="task-date">2026.06–09</span>
               <div>
                 <h3><a href="workstyle.html#database">本番データベース・API の設計と移行</a></h3>
                 <p>TypeScript・PostgreSQL。下流を止めずに進める段階的なスキーマ移行、取り込み API の設計、一意制約で失敗していた店舗の手動登録の修正など。</p>
@@ -208,11 +200,6 @@
               <h3 id="p-shirube">shirube <small>道標</small></h3>
               <p class="project-catch">なりたい職業から、取る授業とその理由、卒業までの時間割を組む Web アプリ</p>
               <p class="project-desc">職業名を入れると、LLM が必要なスキルを読み取り、シラバスを埋め込み検索して候補を集め、LLM が候補を読み直して理由つきで授業を選び、学期ごとの時間割に並べます。改善を始める前に精度・揺れ・費用を測る評価の仕組みを作り、変更を採るかどうかはそれで決めました。</p>
-              <div class="mini-stats">
-                <div class="mini-stat"><b>27.6% → 21.6%</b><span>選んだ授業のうち、関係のない授業の割合</span></div>
-                <div class="mini-stat"><b>0.83 円</b><span>道標 1 件の LLM 費用。改善の前後で同じ</span></div>
-                <div class="mini-stat"><b>0.52 → 0.72</b><span>作り直したときの結果の重なり（揺れの小ささ）</span></div>
-              </div>
               <ul class="tags" aria-label="使った技術">
                 <li>Next.js</li><li>FastAPI</li><li>PostgreSQL + pgvector</li><li>OpenAI API</li><li>AWS EC2</li><li>Docker Compose</li><li>GitHub Actions</li>
               </ul>
@@ -233,10 +220,6 @@
               <h3 id="p-tonari">となり</h3>
               <p class="project-catch">手元を見て、詰まったときだけ声をかける、答えを言わない AI 家庭教師</p>
               <p class="project-desc">紙に書いている手元をスマホで見て、手が止まったときだけ、答えではなく次の一歩を声で示します。自分は API サーバ（状態の管理・ヒントの生成・答え漏れの検査）、手元の静止の判定、デプロイを担当しました。</p>
-              <div class="mini-stats">
-                <div class="mini-stat"><b>16/24 → 0/24</b><span>ヒントに答えが漏れたのを見逃した件数</span></div>
-                <div class="mini-stat"><b>約 3 秒前</b><span>詰まりを先読みして、ヒントを作り始める</span></div>
-              </div>
               <ul class="tags" aria-label="使った技術">
                 <li>Next.js</li><li>FastAPI</li><li>Gemini API</li><li>VOICEVOX</li><li>Web Speech API</li><li>OpenAPI</li>
               </ul>
@@ -368,37 +351,12 @@
       </div>
     </section>
 
-    <!-- ============ 05 これから ============ -->
-    <section class="section" id="next" aria-labelledby="next-title">
-      <div class="wrap">
-        <div class="section-head reveal">
-          <p class="section-label"><b>05</b>これから</p>
-          <h2 class="section-title" id="next-title">使われる場所で、AI を磨き続けたい</h2>
-        </div>
 
-        <div class="next-grid">
-          <div class="statement reveal">
-            <p>インターンで本番の LLM を改善する中で、回答の正しさが、それを使う人の仕事を左右すると実感しました。運営会社を間違えると、営業は意思決定者のいない会社に連絡してしまいます。</p>
-            <p>これからは、AI をプロダクトの中心に組み込み、評価データと利用者の反応の両方で磨き続ける仕事がしたいと考えています。応答の速さや運用の費用まで含めて、バックエンドから作れるエンジニアを目指しています。</p>
-            <p>将来は、作るだけで終わらず、課題を見つけて事業にするところまで関わりたいです。</p>
-          </div>
-          <div class="reveal">
-            <p class="plan-head">shirube で次にやること</p>
-            <ul class="plan-list">
-              <li><b>学生に使ってもらう</b>履修登録の時期（3〜4 月）に使ってもらい、作り直しの回数や、もう取ったと答えた授業を、作成の記録と合わせて見る。</li>
-              <li><b>人の判定と比べる</b>学科の学生や教員に一部を判定してもらい、AI の判定者との一致（κ）を測る。</li>
-              <li><b>卒業要件を入れる</b>必修と卒業要件を入れ、時間割を整数計画に置き換える。先に、今の貪欲法で要件を満たせない道標の数を測る。</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ 06 スキル ============ -->
+    <!-- ============ 05 スキル ============ -->
     <section class="section" id="skills" aria-labelledby="skills-title">
       <div class="wrap">
         <div class="section-head reveal">
-          <p class="section-label"><b>06</b>スキル</p>
+          <p class="section-label"><b>05</b>スキル</p>
           <h2 class="section-title" id="skills-title">使っている技術</h2>
         </div>
 
@@ -431,32 +389,27 @@
       </div>
     </section>
 
-    <!-- ============ 07 連絡先 ============ -->
+    <!-- ============ 06 連絡先 ============ -->
     <section class="section" id="contact" aria-labelledby="contact-title">
       <div class="wrap">
-        <div class="contact reveal">
+        <h2 class="section-label" id="contact-title"><b>06</b>連絡先</h2>
+        <dl class="contact-list">
           <div>
-            <p class="section-label"><b>07</b>連絡先</p>
-            <h2 id="contact-title">お話しできるのを楽しみにしています</h2>
-            <p>インターンや選考のご案内、開発の質問など、お気軽にご連絡ください。</p>
+            <dt>メール</dt>
+            <dd>
+              <a href="mailto:hiroki030434@gmail.com">hiroki030434@gmail.com</a>
+              <button class="copy-btn" type="button" data-copy="hiroki030434@gmail.com" aria-describedby="copy-status">コピー</button>
+              <span class="copy-status" id="copy-status" role="status" aria-live="polite"></span>
+            </dd>
           </div>
-          <div class="contact-links">
-            <a class="btn" href="mailto:hiroki030434@gmail.com">hiroki030434@gmail.com <span aria-hidden="true">→</span></a>
-            <button class="btn" type="button" data-copy="hiroki030434@gmail.com" aria-describedby="copy-status">メールアドレスをコピー <span aria-hidden="true">⧉</span></button>
-            <a class="btn" href="https://github.com/h11roki">GitHub　@h11roki <span aria-hidden="true">↗</span></a>
-            <a class="btn" href="https://shirube.duckdns.org">shirube のデモ <span aria-hidden="true">↗</span></a>
-            <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>
+          <div>
+            <dt>GitHub</dt>
+            <dd><a href="https://github.com/h11roki">github.com/h11roki</a></dd>
           </div>
-        </div>
+        </dl>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="wrap">
-      <p>© 2026 髙橋 浩樹</p>
-      <p>このサイトは Claude Code と一緒に、フレームワークを使わず HTML・CSS・JavaScript で作りました。</p>
-    </div>
-  </footer>
 </body>
 </html>

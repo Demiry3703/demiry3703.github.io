@@ -50,6 +50,11 @@
           <a class="btn" href="https://github.com/h11roki/Shirube">GitHub <span aria-hidden="true">↗</span></a>
           <a class="ext" href="https://github.com/h11roki/Shirube/blob/main/docs/evaluation-log.md">評価の記録</a>
         </div>
+        <div class="stat-row">
+          <div class="mini-stat"><b>27.6% → 21.6%</b><span>選んだ授業のうち、関係のない授業の割合</span></div>
+          <div class="mini-stat"><b>0.83 円</b><span>道標 1 件の LLM 費用。改善の前後で同じ</span></div>
+          <div class="mini-stat"><b>0.52 → 0.72</b><span>作り直したときの結果の重なり（揺れの小ささ）</span></div>
+        </div>
       </div>
 
       <div class="doc-layout">
@@ -337,7 +342,7 @@
             <ul class="bullets">
               <li>学科の学生や教員に一部を判定してもらい、Claude の判定者との一致（κ）を測る。</li>
               <li>期待する 151 件のうち、選び直しで落としたのが 13%、読み取りで 12%、検索で 3%。次は読み取りの揺れを直すが、同じ 50 職業で直し続けると合わせ込むので、見ていない職業を足してから確かめる。</li>
-              <li>学生に使ってもらい、作り直しの回数や、もう取ったと答えた授業を、作成の記録と合わせて見る。</li>
+              <li>履修登録の時期（3〜4 月）に学生に使ってもらい、作り直しの回数や、もう取ったと答えた授業を、作成の記録と合わせて見る。</li>
               <li>必修と卒業要件を入れ、時間割を整数計画に替える。先に、貪欲法で要件を満たせない道標の数を測る。</li>
             </ul>
           </section>
@@ -351,11 +356,5 @@
     </div>
   </main>
 
-  <footer class="site-footer">
-    <div class="wrap">
-      <p>© 2026 髙橋 浩樹</p>
-      <p><a href="index.html#contact">連絡先</a></p>
-    </div>
-  </footer>
 </body>
 </html>
